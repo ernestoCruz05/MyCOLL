@@ -1,0 +1,59 @@
+﻿@page "/utilizadores"
+@attribute [Authorize(Roles="Admin,Gestor")]
+@using Microsoft.AspNetCore.Authorization
+@using MyCOLL.Data
+@using MyCOLL.Services
+@inject UserAdminService Admin
+@inject NavigationManager Nav
+
+<h3>Utilizadores</h3>
+
+@if (rows is null)
+{
+    <p><em>A carregar...</em></p>
+}
+else
+{
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/utilizadores/novo")'>+ Novo Utilizador</button>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Roles</th>
+                <th style="width:220px"></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var r in rows)
+        {
+            <tr>
+                <td>@r.user.Email</td>
+                <td>@string.Join(", ", r.roles)</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => EditRoles(r.user.Id)">Roles</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Disable(r.user.Id)">Desativar</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<(ApplicationUser user, IList<string> roles)>? rows;
+
+    protected override async Task OnInitializedAsync()
+        => rows = await Admin.GetAllAsync();
+
+    private async Task Disable(string id)
+    {
+        await Admin.DisableUserAsync(id);
+        rows = await Admin.GetAllAsync();
+        StateHasChanged();
+    }
+
+    private void EditRoles(string id)
+        => Nav.NavigateTo($"/utilizadores/{id}/roles");
+}

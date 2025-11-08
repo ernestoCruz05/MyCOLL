@@ -1,0 +1,58 @@
+﻿@page "/utilizadores/{Id}/roles"
+@attribute [Authorize(Roles="Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using MyCOLL.Data
+@using MyCOLL.Services
+@inject UserAdminService Admin
+@inject NavigationManager Nav
+
+<h3>Gerir Roles</h3>
+
+@if (model is null)
+{
+    <p><em>A carregar...</em></p>
+}
+else
+{
+    <p><strong>@model?.user.Email</strong></p>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" @onclick='() => AddRole("Gestor")'>Adicionar Gestor</button>
+        <button class="btn btn-outline-primary" @onclick='() => AddRole("Admin")'>Adicionar Admin</button>
+        <button class="btn btn-outline-secondary" @onclick='() => RemoveRole("Gestor")'>Remover Gestor</button>
+        <button class="btn btn-outline-secondary" @onclick='() => RemoveRole("Admin")'>Remover Admin</button>
+        <button class="btn btn-light" @onclick='() => Nav.NavigateTo("/utilizadores")'>Voltar</button>
+    </div>
+
+    <p class="mt-3">Roles atuais: @string.Join(", ", model?.roles ?? new List<string>())</p>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    private (ApplicationUser user, IList<string> roles)? model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = await Admin.GetAllAsync();
+        model = list.FirstOrDefault(x => x.user.Id == Id);
+    }
+
+    private async Task AddRole(string role)
+    {
+        await Admin.AddToRoleAsync(Id, role);
+        await Refresh();
+    }
+
+    private async Task RemoveRole(string role)
+    {
+        await Admin.RemoveFromRoleAsync(Id, role);
+        await Refresh();
+    }
+
+    private async Task Refresh()
+    {
+        var list = await Admin.GetAllAsync();
+        model = list.FirstOrDefault(x => x.user.Id == Id);
+        StateHasChanged();
+    }
+}

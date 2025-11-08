@@ -4,6 +4,10 @@
 @inject MyCOLL.Services.ProdutoService ProdutoService
 @inject MyCOLL.Services.ModoEntregaService ModoEntregaService
 
+@using Microsoft.AspNetCore.Authorization
+
+
+@attribute [Authorize(Roles = "Admin,Gestor")]
 <PageTitle>Dashboard</PageTitle>
 
 <div class="container-fluid">
