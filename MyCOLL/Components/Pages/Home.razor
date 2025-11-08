@@ -1,7 +1,86 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+@inject MyCOLL.Services.CategoriaService CategoriaService
+@inject MyCOLL.Services.ProdutoService ProdutoService
+@inject MyCOLL.Services.ModoEntregaService ModoEntregaService
 
-<h1>Hello, world!</h1>
+<PageTitle>Dashboard</PageTitle>
 
-Welcome to your new app.
+<div class="container-fluid">
+    <h2 class="fw-semibold mb-4">
+        <i class="bi bi-speedometer2 text-primary me-2"></i>
+        Painel de Gestão
+    </h2>
+
+    <div class="row g-4">
+        <div class="col-sm-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Categorias</h6>
+                            <h3 class="fw-bold">@totalCategorias</h3>
+                        </div>
+                        <i class="bi bi-tags text-primary fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Produtos</h6>
+                            <h3 class="fw-bold">@totalProdutos</h3>
+                        </div>
+                        <i class="bi bi-box-seam text-success fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Modos de Entrega</h6>
+                            <h3 class="fw-bold">@totalModos</h3>
+                        </div>
+                        <i class="bi bi-truck text-warning fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-5 shadow-sm border-0">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-clock-history me-2 text-primary"></i> Últimas Atualizações
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                blah blah blah
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalCategorias;
+    private int totalProdutos;
+    private int totalModos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categorias = await CategoriaService.GetAllAsync();
+        var produtos = await ProdutoService.GetAllAsync();
+        var modos = await ModoEntregaService.GetAllAsync();
+
+        totalCategorias = categorias?.Count ?? 0;
+        totalProdutos = produtos?.Count ?? 0;
+        totalModos = modos?.Count ?? 0;
+    }
+}

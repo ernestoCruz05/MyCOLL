@@ -1,0 +1,80 @@
+﻿@page "/categorias"
+@inject MyCOLL.Services.CategoriaService CategoriaService
+@inject NavigationManager NavigationManager
+
+<h3 class="mb-4">Categorias</h3>
+
+<a class="btn btn-success mb-3" href="/categorias/create">+ Nova Categoria</a>
+
+@if (categorias == null)
+{
+    <p><em>A carregar...</em></p>
+}
+else if (!categorias.Any())
+{
+    <p><em>Sem categorias registadas.</em></p>
+}
+else
+{
+    <table class="table table-hover table-striped shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Ativa</th>
+                <th style="width: 150px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in categorias)
+            {
+                <tr>
+                    <td>@c.Id</td>
+                    <td>@c.Nome</td>
+                    <td>@c.Descricao</td>
+                    <td>
+                        @if (c.Ativa)
+                        {
+                            <span class="badge bg-success">Ativa</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inativa</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" @onclick="() => EditCategoria(c.Id)">Editar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCategoria(c.Id)">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<MyCOLL.Entities.Categoria>? categorias;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categorias = await CategoriaService.GetAllAsync();
+    }
+
+    private void EditCategoria(int id)
+    {
+        NavigationManager.NavigateTo($"/categorias/edit/{id}");
+    }
+
+    private async Task DeleteCategoria(int id)
+    {
+        var confirmar = await js.InvokeAsync<bool>("confirm", "Tem a certeza que quer eliminar esta categoria?");
+        if (confirmar)
+        {
+            await CategoriaService.DeleteAsync(id);
+            categorias = await CategoriaService.GetAllAsync();
+        }
+    }
+
+    [Inject] private IJSRuntime js { get; set; } = default!;
+}

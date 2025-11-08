@@ -1,0 +1,56 @@
+﻿@page "/categorias/edit/{id:int}"
+@inject MyCOLL.Services.CategoriaService CategoriaService
+@inject NavigationManager NavigationManager
+
+<h3>Editar Categoria</h3>
+
+@if (categoria == null)
+{
+    <p><em>A carregar...</em></p>
+}
+else
+{
+    <EditForm Model="categoria" OnValidSubmit="Salvar">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Nome</label>
+            <InputText class="form-control" @bind-Value="categoria.Nome" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descrição</label>
+            <InputText class="form-control" @bind-Value="categoria.Descricao" />
+        </div>
+
+        <div class="form-check mb-3">
+            <InputCheckbox class="form-check-input" @bind-Value="categoria.Ativa" />
+            <label class="form-check-label">Ativa</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary me-2">Guardar Alterações</button>
+        <button class="btn btn-secondary" @onclick="Voltar">Cancelar</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private MyCOLL.Entities.Categoria? categoria;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categoria = await CategoriaService.GetByIdAsync(id);
+    }
+
+    private async Task Salvar()
+    {
+        if (categoria != null)
+        {
+            await CategoriaService.UpdateAsync(categoria);
+            NavigationManager.NavigateTo("/categorias");
+        }
+    }
+
+    private void Voltar() => NavigationManager.NavigateTo("/categorias");
+}
