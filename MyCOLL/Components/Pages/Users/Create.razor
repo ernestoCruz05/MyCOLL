@@ -1,5 +1,108 @@
-﻿<h3>Create</h3>
+﻿@page "/utilizadores/novo"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using MyCOLL.Data
+@using MyCOLL.Services
+
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h3>Novo Utilizador</h3>
+
+<EditForm Model="@newUser" OnValidSubmit="@CreateUser">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText class="form-control" @bind-Value="newUser.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <InputText class="form-control" type="password" @bind-Value="newUser.Password" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Role Inicial</label>
+        <InputSelect class="form-select" @bind-Value="selectedRole">
+            <option value="">-- Nenhuma --</option>
+            <option value="Cliente">Cliente</option>
+            <option value="Fornecedor">Fornecedor</option>
+            @if (IsAdmin)
+            {
+                <option value="Gestor">Gestor</option>
+                <option value="Admin">Admin</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancelar</button>
+    </div>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
 
 @code {
+    private NewUserModel newUser = new();
+    private string selectedRole = "";
+    private string? message;
+    private bool IsAdmin = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Ensure EF async extension is available
+        var roles = await RoleManager.Roles.ToListAsync();
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        IsAdmin = authState.User.IsInRole("Admin");
+    }
+
+    private async Task CreateUser()
+    {
+        var user = new ApplicationUser { UserName = newUser.Email, Email = newUser.Email };
+        var result = await UserManager.CreateAsync(user, newUser.Password);
+
+        if (result.Succeeded)
+        {
+            if (!string.IsNullOrEmpty(selectedRole))
+                await UserManager.AddToRoleAsync(user, selectedRole);
+
+            message = "Utilizador criado com sucesso!";
+            await Task.Delay(1000);
+            Nav.NavigateTo("/utilizadores", forceLoad: true);
+        }
+        else
+        {
+            message = string.Join(", ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/utilizadores");
+    }
+
+    private class NewUserModel
+    {
+        [Required(ErrorMessage = "O Email é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Email inválido.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "A Password é obrigatória.")]
+        [MinLength(6, ErrorMessage = "A Password deve ter pelo menos 6 caracteres.")]
+        public string Password { get; set; } = string.Empty;
+    }
 }

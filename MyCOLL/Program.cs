@@ -67,6 +67,13 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+app.MapPost("/logout", async (SignInManager<ApplicationUser> signInManager, HttpContext context) =>
+{
+    await signInManager.SignOutAsync();
+    context.Response.Redirect("/Account/Login");
+});
+
+
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value?.ToLower();
@@ -88,7 +95,7 @@ using (var scope = app.Services.CreateScope())
     var db = services.GetRequiredService<ApplicationDbContext>();
     await db.Database.MigrateAsync();
 
-    string[] roles = { "Admin", "Staff" };
+    string[] roles = { "Admin", "Gestor" };
     foreach (var role in roles)
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
@@ -104,15 +111,14 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(admin, "Admin");
     }
 
-    // Funcionario
-    string staffEmail = "staff@mycoll.com";
-    string staffPass = "Staff123!";
+    string staffEmail = "gestor@mycoll.com";
+    string staffPass = "Gestor123!";
     var staff = await userManager.FindByEmailAsync(staffEmail);
     if (staff == null)
     {
         staff = new ApplicationUser { UserName = staffEmail, Email = staffEmail, EmailConfirmed = true };
         await userManager.CreateAsync(staff, staffPass);
-        await userManager.AddToRoleAsync(staff, "Staff");
+        await userManager.AddToRoleAsync(staff, "Gestor");
     }
 }
 

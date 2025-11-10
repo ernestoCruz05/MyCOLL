@@ -14,7 +14,7 @@ namespace MyCOLL.Data
             await context.Database.MigrateAsync();
 
             // criar roles base
-            string[] roles = { "Administrador", "Funcionario", "Cliente", "Fornecedor" };
+            var roles = new[] { "Admin", "Gestor", "Fornecedor", "Cliente" };
 
             foreach (var role in roles)
             {

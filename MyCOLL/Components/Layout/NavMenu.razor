@@ -5,10 +5,10 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager NavigationManager
 
-
 <div class="sidebar d-flex flex-column justify-content-between text-white"
      style="width: 250px; background-color: #1f1f1f; height: 100vh;">
 
+    <!-- Top section: app name and navigation -->
     <div class="p-4">
         <h4 class="fw-bold text-white mb-4 text-center">MyCOLL</h4>
         <hr class="border-secondary mb-4" />
@@ -34,18 +34,14 @@
                     <i class="bi bi-truck me-2"></i> Modos de Entrega
                 </NavLink>
             </li>
-            <AuthorizeView Roles="Admin,Gestor">
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/utilizadores">
-                        <span class="bi bi-people" aria-hidden="true"></span> Utilizadores
-                    </NavLink>
-                </div>
-            </AuthorizeView>
 
+            <AuthorizeView Roles="Admin,Gestor">
+                    <NavLink class="nav-link text-white px-3 py-2" href="/utilizadores">
+                        <i class="bi bi-people me-2"></i> Utilizadores
+                    </NavLink>
+            </AuthorizeView>
         </ul>
     </div>
-
-
 
     <div class="p-4 border-top border-secondary">
         <AuthorizeView>
@@ -58,28 +54,20 @@
                         <span class="text-muted">@GetUserRole(auth)</span>
                     </div>
 
-                    <form action="Account/Logout" method="post" class="mt-3">
+                    <form action="/logout" method="post">
                         <AntiforgeryToken />
-                        <button type="submit" class="btn btn-outline-light w-100 sidebar-btn">
+                        <button type="submit" class="btn btn-outline-danger w-100 sidebar-btn">
                             Logout
                         </button>
                     </form>
+
 
                     <div class="text-center mt-2 small text-secondary">© MyCOLL 2025</div>
                 </div>
             </Authorized>
 
             <NotAuthorized>
-                <div class="sidebar-footer">
-                    <form action="Account/Login" method="get">
-                        <button type="submit" class="btn btn-primary w-100 sidebar-btn">Login</button>
-                    </form>
-                    <div class="text-center mt-2 small text-secondary">© MyCOLL 2025</div>
-                </div>
-            </NotAuthorized>
-
-            <NotAuthorized>
-                <div class="sidebar-footer">
+                <div class="sidebar-footer text-center">
                     <button class="btn btn-primary w-100 sidebar-btn" @onclick="GoToLogin">
                         Login
                     </button>
@@ -88,43 +76,22 @@
             </NotAuthorized>
         </AuthorizeView>
     </div>
-
-    @code {
-        private async Task Logout()
-        {
-            await SignInManager.SignOutAsync();
-            NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
-        }
-
-        private void GoToLogin()
-        => NavigationManager.NavigateTo("/Account/Login");
-
-        private string GetUserRole(AuthenticationState auth)
-        {
-            var roleClaim = auth.User.Claims
-            .FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role);
-            return roleClaim?.Value ?? "User";
-        }
-    }
 </div>
 
 @code {
-    private string? currentUrl;
-
-    protected override void OnInitialized()
+    private async Task Logout()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
+    private void GoToLogin()
+        => NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
 
-    public void Dispose()
+    private string GetUserRole(AuthenticationState auth)
     {
-        NavigationManager.LocationChanged -= OnLocationChanged;
+        var roleClaim = auth.User.Claims
+            .FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role);
+        return roleClaim?.Value ?? "User";
     }
 }
