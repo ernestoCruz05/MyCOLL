@@ -72,8 +72,23 @@
 
     private async Task CreateUser()
     {
-        var user = new ApplicationUser { UserName = newUser.Email, Email = newUser.Email };
-        var result = await UserManager.CreateAsync(user, newUser.Password);
+        var user = new ApplicationUser
+        {
+            UserName = newUser.Email,
+            Email = newUser.Email,
+            EmailConfirmed = true,
+            DataCriacao = DateTime.Now
+        };
+        IdentityResult result;
+
+        if (!string.IsNullOrWhiteSpace(newUser.Password))
+        {
+            result = await UserManager.CreateAsync(user, newUser.Password);
+        }
+        else
+        {
+            result = await UserManager.CreateAsync(user);
+        }
 
         if (result.Succeeded)
         {
@@ -90,6 +105,7 @@
         }
     }
 
+
     private void Cancel()
     {
         Nav.NavigateTo("/utilizadores");
@@ -101,8 +117,6 @@
         [EmailAddress(ErrorMessage = "Email inválido.")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "A Password é obrigatória.")]
-        [MinLength(6, ErrorMessage = "A Password deve ter pelo menos 6 caracteres.")]
-        public string Password { get; set; } = string.Empty;
+        public string? Password { get; set; } = string.Empty;
     }
 }

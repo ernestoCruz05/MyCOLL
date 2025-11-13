@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MyCOLL.Services;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyCOLL.Entities
@@ -15,6 +16,11 @@ namespace MyCOLL.Entities
 
         public bool Ativa { get; set; } = true;
 
+        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime? DataAtualizacao { get; set; }
+
         public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
+
+        private readonly LogService _log;
     }
 }

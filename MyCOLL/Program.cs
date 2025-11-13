@@ -23,6 +23,7 @@ builder.Services.AddScoped<ProdutoService>();
 builder.Services.AddScoped<ModoEntregaService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<LogService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -93,12 +94,15 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var db = services.GetRequiredService<ApplicationDbContext>();
+
     await db.Database.MigrateAsync();
 
-    string[] roles = { "Admin", "Gestor" };
+    string[] roles = { "Admin", "Gestor", "Cliente", "Fornecedor" };
     foreach (var role in roles)
+    {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
+    }
 
     // Admin
     string adminEmail = "admin@mycoll.com";
@@ -111,6 +115,7 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(admin, "Admin");
     }
 
+    // Gestor
     string staffEmail = "gestor@mycoll.com";
     string staffPass = "Gestor123!";
     var staff = await userManager.FindByEmailAsync(staffEmail);
@@ -121,6 +126,7 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(staff, "Gestor");
     }
 }
+
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

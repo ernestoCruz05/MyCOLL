@@ -18,6 +18,9 @@ namespace MyCOLL.Entities
 
         public int PrazoEstimadoDias { get; set; }
 
+        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime? DataAtualizacao { get; set; }
+
         public bool Ativo { get; set; } = true;
         public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
     }

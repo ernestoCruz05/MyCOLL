@@ -243,3 +243,126 @@ main, .container, .container-fluid, .content, .card, .table {
     border: 1px solid #ffeeba !important;
     color: #856404 !important;
 }
+
+/* ====================== */
+/*   TABLE VISIBILITY FIX  */
+/* ====================== */
+
+.table {
+    border-color: #2b2b2b !important;
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+    .table thead {
+        background-color: #1f1f1f !important;
+        color: #f0f0f0 !important;
+        border-bottom: 2px solid #333 !important;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: #f0f0f0 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .table td {
+        color: #212121 !important;
+        vertical-align: middle !important;
+    }
+
+    /* Alternate row shading for better readability */
+    .table tbody tr:nth-child(even) {
+        background-color: #eeeeee !important;
+    }
+
+
+    .table .btn {
+        display: inline-block !important;
+        margin-right: 6px !important;
+        margin-bottom: 0 !important;
+        padding: 0.4rem 0.8rem !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+    }
+
+        .table .btn:last-child {
+            margin-right: 0 !important;
+        }
+
+    .table td:last-child {
+        white-space: nowrap !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+
+
+/* ====================== */
+/*    BUTTON VISIBILITY    */
+/* ====================== */
+
+/* Edit button (yellow) */
+.btn-warning {
+    background-color: #f4b400 !important;
+    border: none !important;
+    color: #111 !important;
+    font-weight: 600;
+}
+
+    .btn-warning:hover {
+        background-color: #e0a800 !important;
+        color: #000 !important;
+    }
+
+/* Delete button (red) */
+.btn-danger {
+    background-color: #c0392b !important;
+    border: none !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+    .btn-danger:hover {
+        background-color: #a93226 !important;
+    }
+
+/* Status label (Ativa / Inativa) */
+.badge-success {
+    background-color: #198754 !important;
+    color: #fff !important;
+}
+
+.badge-secondary {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+.stat-card {
+    background-color: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    transition: all 0.2s ease-in-out;
+}
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card h6 {
+        font-size: 0.9rem;
+        color: #777;
+    }
+
+.card-header {
+    background-color: #f9f9f9 !important;
+    color: #222 !important;
+    border-bottom: 1px solid #ddd !important;
+}
+
+.card-body {
+    color: #444;
+}

@@ -29,6 +29,9 @@ namespace MyCOLL.Entities
         [StringLength(300)]
         public string? ImagemUrl { get; set; }
 
+        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime? DataAtualizacao { get; set; }
+
         public DateTime DataAdicao { get; set; } = DateTime.Now;
     }
 }

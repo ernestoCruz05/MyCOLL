@@ -28,12 +28,15 @@ namespace MyCOLL.Services
 
         public async Task AddAsync(ModoEntrega modo)
         {
+            modo.DataCriacao = DateTime.Now;
+            modo.DataAtualizacao = null;
             _context.ModosEntrega.Add(modo);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(ModoEntrega modo)
         {
+            modo.DataAtualizacao = DateTime.Now;
             _context.ModosEntrega.Update(modo);
             await _context.SaveChangesAsync();
         }

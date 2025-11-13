@@ -37,6 +37,8 @@ namespace MyCOLL.Services
         // Adiciona uma entrada a DB
         public async Task AddAsync(Produto produto)
         {
+            produto.DataCriacao = DateTime.Now;
+            produto.DataAtualizacao = null;
             _context.Produtos.Add(produto);
             await _context.SaveChangesAsync();
         }
@@ -44,6 +46,7 @@ namespace MyCOLL.Services
         // Atualiza as entradas da DB 
         public async Task UpdateAsync(Produto produto)
         {
+            produto.DataAtualizacao = DateTime.Now;
             _context.Produtos.Update(produto);
             await _context.SaveChangesAsync();
         }

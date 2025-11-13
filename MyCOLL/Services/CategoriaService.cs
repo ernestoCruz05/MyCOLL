@@ -10,10 +10,11 @@ namespace MyCOLL.Services
     public class CategoriaService
     {
         private readonly ApplicationDbContext _context;
-
-        public CategoriaService(ApplicationDbContext context)
+        private readonly LogService _log;
+        public CategoriaService(ApplicationDbContext context, LogService log)
         {
             _context = context;
+            _log = log;
         }
 
         public async Task<List<Categoria>> GetAllAsync() =>
@@ -30,12 +31,17 @@ namespace MyCOLL.Services
         {
             _context.Categorias.Add(categoria);
             await _context.SaveChangesAsync();
+
+            await _log.AddAsync("Categoria", "Criada", categoria.Nome);
         }
 
         public async Task UpdateAsync(Categoria categoria)
         {
+            categoria.DataAtualizacao = DateTime.Now;
             _context.Categorias.Update(categoria);
             await _context.SaveChangesAsync();
+
+            await _log.AddAsync("Categoria", "Atualizada", categoria.Nome);
         }
 
         public async Task DeleteAsync(int id)
@@ -45,6 +51,8 @@ namespace MyCOLL.Services
             {
                 _context.Categorias.Remove(cat);
                 await _context.SaveChangesAsync();
+
+                await _log.AddAsync("Categoria", "Eliminada", cat.Nome);
             }
         }
     }

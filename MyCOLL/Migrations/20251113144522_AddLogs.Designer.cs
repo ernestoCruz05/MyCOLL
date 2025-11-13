@@ -12,8 +12,8 @@ using MyCOLL.Data;
 namespace MyCOLL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251108051636_InitialFullSchema")]
-    partial class InitialFullSchema
+    [Migration("20251113144522_AddLogs")]
+    partial class AddLogs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -170,6 +170,12 @@ namespace MyCOLL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -234,6 +240,12 @@ namespace MyCOLL.Migrations
                     b.Property<bool>("Ativa")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Descricao")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -246,6 +258,33 @@ namespace MyCOLL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categorias");
+                });
+
+            modelBuilder.Entity("MyCOLL.Entities.LogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Acao")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Nome")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Logs");
                 });
 
             modelBuilder.Entity("MyCOLL.Entities.ModoEntrega", b =>
@@ -261,6 +300,12 @@ namespace MyCOLL.Migrations
 
                     b.Property<decimal>("CustoBase")
                         .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Descricao")
                         .HasMaxLength(250)
@@ -294,6 +339,12 @@ namespace MyCOLL.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("DataAdicao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Descricao")

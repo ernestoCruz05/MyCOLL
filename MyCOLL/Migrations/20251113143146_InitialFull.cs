@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MyCOLL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialFullSchema : Migration
+    public partial class InitialFull : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -58,7 +58,9 @@ namespace MyCOLL.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Ativa = table.Column<bool>(type: "bit", nullable: false)
+                    Ativa = table.Column<bool>(type: "bit", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DataAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -75,6 +77,8 @@ namespace MyCOLL.Migrations
                     Descricao = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
                     CustoBase = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
                     PrazoEstimadoDias = table.Column<int>(type: "int", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DataAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Ativo = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -202,6 +206,8 @@ namespace MyCOLL.Migrations
                     CategoriaId = table.Column<int>(type: "int", nullable: false),
                     ModoEntregaId = table.Column<int>(type: "int", nullable: false),
                     ImagemUrl = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
+                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DataAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DataAdicao = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
