@@ -2,63 +2,62 @@
 using MyCOLL.Data;
 using MyCOLL.Entities;
 
-
-// Services servem para o UI interagir com a DB sem ter acesso direto
-// | UI | <-> | Services | <-> |DB|
-
 namespace MyCOLL.Services
 {
     public class ProdutoService
     {
         private readonly ApplicationDbContext _context;
+        private readonly LogService _log; // Adicionado LogService
 
-
-        // Blah blah blah!!!
-        // Injetar as dependencias do ASP.NET
-        public ProdutoService(ApplicationDbContext context)
+        public ProdutoService(ApplicationDbContext context, LogService log)
         {
             _context = context;
+            _log = log;
         }
 
-        // Obter a lista das entradas da DB
         public async Task<List<Produto>> GetAllAsync() =>
             await _context.Produtos
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
+                .OrderByDescending(p => p.Id)
                 .ToListAsync();
 
-        // Procura uma entrada na DB pelo ID, o ? indica que pode ser null
         public async Task<Produto?> GetByIdAsync(int id) =>
             await _context.Produtos
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-        // Adiciona uma entrada a DB
         public async Task AddAsync(Produto produto)
         {
             produto.DataCriacao = DateTime.Now;
             produto.DataAtualizacao = null;
+
             _context.Produtos.Add(produto);
             await _context.SaveChangesAsync();
+
+            await _log.AddAsync("Produto", "Criado", produto.Nome);
         }
 
-        // Atualiza as entradas da DB 
         public async Task UpdateAsync(Produto produto)
         {
             produto.DataAtualizacao = DateTime.Now;
+
             _context.Produtos.Update(produto);
             await _context.SaveChangesAsync();
+
+            await _log.AddAsync("Produto", "Atualizado", produto.Nome);
         }
 
-        // Remove uma entrada da DB
         public async Task DeleteAsync(int id)
         {
-            var cat = await _context.Produtos.FindAsync(id);
-            if (cat != null)
+            var prod = await _context.Produtos.FindAsync(id);
+            if (prod != null)
             {
-                _context.Produtos.Remove(cat);
+                _context.Produtos.Remove(prod);
                 await _context.SaveChangesAsync();
+
+                await _log.AddAsync("Produto", "Eliminado", prod.Nome);
             }
         }
     }

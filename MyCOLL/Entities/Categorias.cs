@@ -21,6 +21,5 @@ namespace MyCOLL.Entities
 
         public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
 
-        private readonly LogService _log;
     }
 }

@@ -49,7 +49,8 @@ namespace MyCOLL.Services
             var cat = await _context.Categorias.FindAsync(id);
             if (cat != null)
             {
-                _context.Categorias.Remove(cat);
+                if (cat.Produtos.Any())
+                    throw new InvalidOperationException("Não é possível apagar categorias com produtos associados.");
                 await _context.SaveChangesAsync();
 
                 await _log.AddAsync("Categoria", "Eliminada", cat.Nome);

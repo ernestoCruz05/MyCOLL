@@ -1,5 +1,180 @@
-<h3>Index</h3>
+@page "/produtos"
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject ProdutoService Service
+@inject CategoriaService CategoriaService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor,Fornecedor")]
+
+<PageTitle>Gestão de Produtos</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-normal mb-0">Gestão de Produtos</h2>
+        <a href="/produtos/criar" class="btn btn-dark">
+            <i class="bi bi-plus-lg"></i> Novo Produto
+        </a>
+    </div>
+
+    <!-- Filtros mantidos iguais... -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body bg-light rounded">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Pesquisar por nome..."
+                               @bind="searchTerm" @bind:event="oninput" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filtroCategoria">
+                        <option value="0">Todas as Categorias</option>
+                        @foreach (var c in categorias)
+                        {
+                            <option value="@c.Id">@c.Nome</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filtroEstado">
+                        <option value="">Todos os Estados</option>
+                        <option value="ativo">Ativos</option>
+                        <option value="inativo">Inativos (Pendentes)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="LimparFiltros">
+                        Limpar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 60px;">IMG</th>
+                        <th>NOME</th>
+                        <th>CATEGORIA</th>
+                        <th>PREÇO</th>
+                        <th>STOCK</th>
+                        <th class="text-center">ESTADO</th>
+                        <!-- MUDANÇA AQUI: text-center -->
+                        <th class="text-center">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (produtosFiltrados == null)
+                    {
+                        <tr><td colspan="7" class="text-center py-4">A carregar...</td></tr>
+                    }
+                    else if (!produtosFiltrados.Any())
+                    {
+                        <tr><td colspan="7" class="text-center py-4 text-muted">Nenhum produto corresponde aos filtros.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in produtosFiltrados)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.ImagemUrl))
+                                    {
+                                        <img src="@item.ImagemUrl" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light rounded border d-flex align-items-center justify-content-center text-muted" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-image-alt"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td class="fw-semibold">@item.Nome</td>
+                                <td><span class="badge bg-light text-dark border">@(item.Categoria?.Nome ?? "-")</span></td>
+                                <td>@item.Preco.ToString("C2")</td>
+                                <td>
+                                    @if(item.Stock < 5)
+                                    {
+                                        <span class="text-danger fw-bold">@item.Stock un.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.Stock un.</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.Ativo)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pendente</span>
+                                    }
+                                </td>
+                                <!-- MUDANÇA AQUI: text-center -->
+                                <td class="text-center">
+                                    <a href="/produtos/editar/@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                        Editar
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Apagar(item)">
+                                        Apagar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 @code {
+    // Código C# mantém-se igual ao anterior
+    private List<Produto> todosProdutos = new();
+    private List<Categoria> categorias = new();
+    private string searchTerm = "";
+    private int filtroCategoria = 0;
+    private string filtroEstado = "";
 
+    private IEnumerable<Produto> produtosFiltrados => todosProdutos
+        .Where(p => string.IsNullOrWhiteSpace(searchTerm) || p.Nome.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        .Where(p => filtroCategoria == 0 || p.CategoriaId == filtroCategoria)
+        .Where(p => string.IsNullOrEmpty(filtroEstado)
+                    || (filtroEstado == "ativo" && p.Ativo)
+                    || (filtroEstado == "inativo" && !p.Ativo));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+        categorias = await CategoriaService.GetAllAsync();
+    }
+
+    private async Task CarregarDados()
+    {
+        todosProdutos = await Service.GetAllAsync();
+    }
+
+    private void LimparFiltros()
+    {
+        searchTerm = "";
+        filtroCategoria = 0;
+        filtroEstado = "";
+    }
+
+    private async Task Apagar(Produto item)
+    {
+        bool conf = await JS.InvokeAsync<bool>("confirm", $"Eliminar '{item.Nome}'?");
+        if (conf)
+        {
+            await Service.DeleteAsync(item.Id);
+            await CarregarDados();
+        }
+    }
 }

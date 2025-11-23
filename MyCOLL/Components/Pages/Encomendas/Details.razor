@@ -1,0 +1,150 @@
+﻿@page "/encomendas/detalhes/{Id:int}"
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject EncomendaService Service
+@inject NavigationManager Nav
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
+
+<PageTitle>Detalhes da Encomenda</PageTitle>
+
+<div class="container py-4" style="max-width: 900px;">
+    <div class="mb-3">
+        <a href="/encomendas" class="text-decoration-none text-muted">
+            <i class="bi bi-arrow-left"></i> Voltar à lista
+        </a>
+    </div>
+
+    @if (encomenda == null)
+    {
+        <div class="alert alert-warning">Encomenda não encontrada.</div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold">Encomenda #@encomenda.Id</h4>
+                <span class="badge rounded-pill px-3 py-2 fs-6 @GetBadgeClass(encomenda.Estado)">
+                    @encomenda.Estado
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted text-uppercase small">Cliente</h6>
+                        <p class="mb-1 fw-bold">@encomenda.Cliente?.UserName</p>
+                        <p class="mb-0 text-muted">@encomenda.Cliente?.Email</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted text-uppercase small">Data</h6>
+                        <p class="mb-0">@encomenda.DataEncomenda.ToString("f")</p>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted text-uppercase small">Envio</h6>
+                        <p class="mb-1"><strong>Método:</strong> @encomenda.MetodoEntregaNome</p>
+                        <p class="mb-0"><strong>Morada:</strong> @encomenda.MoradaEnvio</p>
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3 border-bottom pb-2">Itens</h5>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Produto</th>
+                                <th class="text-center">Qtd</th>
+                                <th class="text-end">Preço Unit.</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in encomenda.Itens)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (item.Produto != null)
+                                        {
+                                            <span>@item.Produto.Nome</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted text-decoration-line-through">Produto Eliminado</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">@item.Quantidade</td>
+                                    <td class="text-end">@item.PrecoUnitario.ToString("C2")</td>
+                                    <td class="text-end fw-bold">@((item.Quantidade * item.PrecoUnitario).ToString("C2"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end">Portes de Envio:</td>
+                                <td class="text-end">@encomenda.CustoEntrega.ToString("C2")</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end fs-5 fw-bold">Total:</td>
+                                <td class="text-end fs-5 fw-bold text-primary">@encomenda.Total.ToString("C2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-4">
+                    @if (encomenda.Estado == EstadoEncomenda.Pendente)
+                    {
+                        <button class="btn btn-primary" @onclick="() => MudarEstado(EstadoEncomenda.Expedida)">
+                            <i class="bi bi-box-seam me-2"></i> Marcar como Expedida
+                        </button>
+                        <button class="btn btn-outline-danger" @onclick="() => MudarEstado(EstadoEncomenda.Cancelada)">
+                            Cancelar Encomenda
+                        </button>
+                    }
+                    else if (encomenda.Estado == EstadoEncomenda.Expedida)
+                    {
+                        <button class="btn btn-success" @onclick="() => MudarEstado(EstadoEncomenda.Entregue)">
+                            <i class="bi bi-check-circle me-2"></i> Marcar como Entregue
+                        </button>
+                        <button class="btn btn-warning" @onclick="() => MudarEstado(EstadoEncomenda.Cancelada)">
+                            <i class="bi bi-x-circle me-2"></i> Cancelar e Repor Stock
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Encomenda? encomenda;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Carregar();
+    }
+
+    private async Task Carregar()
+    {
+        encomenda = await Service.GetByIdAsync(Id);
+    }
+
+    private async Task MudarEstado(EstadoEncomenda novoEstado)
+    {
+        await Service.UpdateEstadoAsync(Id, novoEstado);
+        await Carregar();
+    }
+
+    private string GetBadgeClass(EstadoEncomenda estado) => estado switch
+    {
+        EstadoEncomenda.Pendente => "bg-warning text-dark",
+        EstadoEncomenda.Paga => "bg-info text-dark",
+        EstadoEncomenda.Expedida => "bg-primary",
+        EstadoEncomenda.Entregue => "bg-success",
+        EstadoEncomenda.Cancelada => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

@@ -1,5 +1,119 @@
-<h3>Index</h3>
+@page "/modos-entrega"
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject ModoEntregaService Service
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
+
+<PageTitle>Modos de Entrega</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-normal mb-0">Modos de Entrega</h2>
+        <a href="/modos-entrega/criar" class="btn btn-dark">
+            <i class="bi bi-plus-lg"></i> Novo Modo
+        </a>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>NOME</th>
+                        <th>DESCRI플O</th>
+                        <th>CUSTO</th>
+                        <th>PRAZO</th>
+                        <th class="text-center">ESTADO</th>
+                        <!-- CORRE플O: Centrado -->
+                        <th class="text-center">A합ES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (modos == null)
+                    {
+                        <tr><td colspan="6" class="text-center py-4">A carregar...</td></tr>
+                    }
+                    else if (!modos.Any())
+                    {
+                        <tr><td colspan="6" class="text-center py-4 text-muted">Nenhum modo de entrega registado.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in modos)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.Nome</td>
+                                <td class="text-muted small">@item.Descricao</td>
+                                <td>@item.CustoBase.ToString("C2")</td>
+                                <td>@item.PrazoEstimadoDias dias</td>
+                                <td class="text-center">
+                                    @if (item.Ativo)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inativo</span>
+                                    }
+                                </td>
+                                <!-- CORRE플O: Centrado -->
+                                <td class="text-center">
+                                    <a href="/modos-entrega/editar/@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                        Editar
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Apagar(item)">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 @code {
+    private List<ModoEntrega>? modos;
+    private string? errorMessage;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+    }
+
+    private async Task CarregarDados()
+    {
+        modos = await Service.GetAllAsync();
+    }
+
+    private async Task Apagar(ModoEntrega item)
+    {
+        bool confirmado = await JS.InvokeAsync<bool>("confirm", $"Tem a certeza que deseja eliminar '{item.Nome}'?");
+
+        if (confirmado)
+        {
+            try
+            {
+                await Service.DeleteAsync(item.Id);
+                await CarregarDados();
+                errorMessage = null;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
+        }
+    }
 }

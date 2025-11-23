@@ -1,124 +1,227 @@
 ﻿@page "/"
-
-@inject MyCOLL.Services.CategoriaService CategoriaService 
-@inject MyCOLL.Services.ProdutoService ProdutoService 
-@inject MyCOLL.Services.ModoEntregaService ModoEntregaService 
-@inject MyCOLL.Services.LogService LogService
 @using MyCOLL.Entities
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin,Gestor")]
+@using MyCOLL.Services
+@inject CategoriaService CategoriaService
+@inject ProdutoService ProdutoService
+@inject ModoEntregaService ModoEntregaService
+@inject EncomendaService EncomendaService
+@inject LogService LogService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
-
-
-<PageTitle>Painel de Gestão</PageTitle>
+<PageTitle>Dashboard</PageTitle>
 
 <div class="container-fluid py-4">
-    <h2 class="fw-semibold mb-4">
-        <i class="bi bi-speedometer2 text-primary me-2"></i>
-        Painel de Gestão
-    </h2>
-
-    <!-- Dashboard cards -->
-    <div class="row g-4">
-        <div class="col-sm-6 col-lg-4">
-            <div class="stat-card h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Categorias</h6>
-                        <h3 class="fw-bold mb-0">@totalCategorias</h3>
-                    </div>
-                    <i class="bi bi-tags text-primary fs-2"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-sm-6 col-lg-4">
-            <div class="stat-card h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Produtos</h6>
-                        <h3 class="fw-bold mb-0">@totalProdutos</h3>
-                    </div>
-                    <i class="bi bi-box-seam text-success fs-2"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-sm-6 col-lg-4">
-            <div class="stat-card h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Modos de Entrega</h6>
-                        <h3 class="fw-bold mb-0">@totalModos</h3>
-                    </div>
-                    <i class="bi bi-truck text-warning fs-2"></i>
-                </div>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Dashboard</h2>
+            <p class="text-muted mb-0">Visão geral da loja</p>
         </div>
     </div>
 
-    <div class="card mt-5 shadow-sm border-0 rounded-3">
-        <div class="card-header bg-light fw-semibold">
-            <i class="bi bi-clock-history me-2 text-primary"></i> Últimas Atualizações
-        </div>
-        <div class="card-body">
-
-            @if (ultimasAtualizacoes.Count == 0)
-            {
-                <p class="text-muted mb-0">Sem atualizações recentes.</p>
-            }
-            else
-            {
-                <ul class="list-unstyled mb-0">
-                    @foreach (var log in ultimasAtualizacoes)
-                    {
-                        <div class="mb-3">
-
-                            <div>
-                                <strong>@log.Tipo:</strong> @log.Acao
-
-                                @if (!string.IsNullOrWhiteSpace(log.Nome))
-                                {
-                                    <span class="fw-semibold">— @log.Nome</span>
-                                }
-                            </div>
-
-                            @if (!string.IsNullOrWhiteSpace(log.Descricao))
-                            {
-                                <div class="text-muted small">@log.Descricao</div>
-                            }
-
-                            <small class="text-muted">@log.Data.ToString("dd/MM/yyyy HH:mm")</small>
+    <!-- 1. CARDS DE ESTATÍSTICAS (KPIs) -->
+    <div class="row g-4 mb-4">
+        <!-- Vendas Totais -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Vendas Totais</p>
+                            <h3 class="mb-0">@totalVendas.ToString("C0")</h3>
                         </div>
-                    }
-                </ul>
-            }
+                        <div class="bg-success-subtle text-success rounded p-2">
+                            <i class="bi bi-currency-euro fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Encomendas Pendentes -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Pendentes</p>
+                            <h3 class="mb-0">@encomendasPendentes</h3>
+                        </div>
+                        <div class="bg-warning-subtle text-warning-emphasis rounded p-2">
+                            <i class="bi bi-hourglass-split fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produtos Ativos -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Produtos</p>
+                            <h3 class="mb-0">@totalProdutos</h3>
+                        </div>
+                        <div class="bg-primary-subtle text-primary rounded p-2">
+                            <i class="bi bi-box-seam fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorias -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Categorias</p>
+                            <h3 class="mb-0">@totalCategorias</h3>
+                        </div>
+                        <div class="bg-info-subtle text-info-emphasis rounded p-2">
+                            <i class="bi bi-tags fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <div class="row g-4">
+        <!-- 2. ÚLTIMAS ENCOMENDAS (Tabela) -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="mb-0 fw-bold">Encomendas Recentes</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <!-- CORREÇÃO: table-dark para contraste ou table-light com texto escuro -->
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Data</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ultimasEncomendas == null || !ultimasEncomendas.Any())
+                            {
+                                <tr><td colspan="6" class="text-center py-4 text-muted">Sem dados recentes.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var enc in ultimasEncomendas)
+                                {
+                                    <tr>
+                                        <td class="fw-bold text-primary">#@enc.Id</td>
+                                        <td>
+                                            <div class="fw-semibold">@enc.Cliente?.UserName</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">@enc.Cliente?.Email</small>
+                                        </td>
+                                        <td>@enc.DataEncomenda.ToString("dd/MM")</td>
+                                        <td class="fw-bold">@enc.Total.ToString("C2")</td>
+                                        <td>
+                                            <span class="badge rounded-pill border @GetBadgeClass(enc.Estado)">
+                                                @enc.Estado
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <!-- CORREÇÃO: Botão com texto e estilo outline -->
+                                            <a href="/encomendas/detalhes/@enc.Id" class="btn btn-sm btn-outline-secondary">
+                                                Detalhes
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white border-0 text-center py-3">
+                    <a href="/encomendas" class="text-decoration-none fw-semibold small">Ver todas as encomendas <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ÚLTIMAS ATUALIZAÇÕES (Logs) - Trazido de volta -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Atividade Recente</h5>
+                    <span class="badge bg-light text-secondary border">Logs</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @if (ultimosLogs == null || !ultimosLogs.Any())
+                        {
+                            <div class="p-4 text-center text-muted">Sem atividade recente.</div>
+                        }
+                        else
+                        {
+                            @foreach (var log in ultimosLogs)
+                            {
+                                <div class="list-group-item px-4 py-3 border-0 border-bottom">
+                                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                        <span class="badge bg-light text-dark border">@log.Tipo</span>
+                                        <small class="text-muted">@log.Data.ToString("HH:mm")</small>
+                                    </div>
+                                    <p class="mb-1 fw-semibold text-truncate">@log.Acao @log.Nome</p>
+                                    @if (!string.IsNullOrEmpty(log.Descricao))
+                                    {
+                                        <small class="text-muted d-block text-truncate">@log.Descricao</small>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
-
-    private int totalCategorias;
+    private decimal totalVendas;
+    private int encomendasPendentes;
     private int totalProdutos;
-    private int totalModos;
+    private int totalCategorias;
 
-    private List<LogEntry> ultimasAtualizacoes = new();
+    private List<Encomenda> ultimasEncomendas = new();
+    private List<LogEntry> ultimosLogs = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var categorias = await CategoriaService.GetAllAsync();
-        var produtos = await ProdutoService.GetAllAsync();
-        var modos = await ModoEntregaService.GetAllAsync();
+        // Carregar Dados
+        var todasEncomendas = await EncomendaService.GetAllAsync();
+        var todosProdutos = await ProdutoService.GetAllAsync();
+        var todasCategorias = await CategoriaService.GetAllAsync();
 
-        totalCategorias = categorias?.Count ?? 0;
-        totalProdutos = produtos?.Count ?? 0;
-        totalModos = modos?.Count ?? 0;
+        // Carregar Logs
+        ultimosLogs = await LogService.GetRecent(6);
 
-        // agora usa logs reais da DB
-        ultimasAtualizacoes = await LogService.GetRecent(5);
+        // Calcular KPIs
+        totalVendas = todasEncomendas.Sum(e => e.Total);
+        encomendasPendentes = todasEncomendas.Count(e => e.Estado == EstadoEncomenda.Pendente);
+        totalProdutos = todosProdutos.Count;
+        totalCategorias = todasCategorias.Count;
+
+        // Listas Filtradas
+        ultimasEncomendas = todasEncomendas.Take(5).ToList();
     }
 
-
+    private string GetBadgeClass(EstadoEncomenda estado) => estado switch
+    {
+        EstadoEncomenda.Pendente => "bg-warning-subtle text-warning-emphasis border-warning-subtle",
+        EstadoEncomenda.Paga => "bg-info-subtle text-info-emphasis border-info-subtle",
+        EstadoEncomenda.Expedida => "bg-primary-subtle text-primary-emphasis border-primary-subtle",
+        EstadoEncomenda.Entregue => "bg-success-subtle text-success-emphasis border-success-subtle",
+        EstadoEncomenda.Cancelada => "bg-danger-subtle text-danger-emphasis border-danger-subtle",
+        _ => "bg-secondary-subtle text-secondary-emphasis border-secondary-subtle"
+    };
 }

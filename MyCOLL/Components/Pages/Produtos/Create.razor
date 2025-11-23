@@ -1,5 +1,141 @@
-<h3>Create</h3>
+@page "/produtos/criar"
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject ProdutoService ProdutoService
+@inject CategoriaService CategoriaService
+@inject ModoEntregaService ModoEntregaService
+@inject NavigationManager Nav
+@inject IWebHostEnvironment Env
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
+
+<PageTitle>Novo Produto</PageTitle>
+
+<div class="container py-4" style="max-width: 800px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h4 class="mb-0 fw-bold">Novo Produto</h4>
+        </div>
+        <div class="card-body p-4">
+            <EditForm Model="@produto" OnValidSubmit="Guardar">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger mb-3" />
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Nome do Produto</label>
+                        <InputText @bind-Value="produto.Nome" class="form-control" placeholder="Ex: Selo Raro 1950" />
+                        <ValidationMessage For="@(() => produto.Nome)" />
+                    </div>
+                    <div class="col-md-4">
+                         <label class="form-label fw-semibold">Stock</label>
+                         <InputNumber @bind-Value="produto.Stock" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Descrição</label>
+                    <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="4" />
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Preço (€)</label>
+                        <InputNumber @bind-Value="produto.Preco" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Categoria</label>
+                        <InputSelect @bind-Value="produto.CategoriaId" class="form-select">
+                            <option value="0">-- Selecionar --</option>
+                            @foreach (var c in categorias)
+                            {
+                                <option value="@c.Id">@c.Nome</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Modo de Entrega</label>
+                        <InputSelect @bind-Value="produto.ModoEntregaId" class="form-select">
+                            <option value="0">-- Selecionar --</option>
+                            @foreach (var m in modos)
+                            {
+                                <option value="@m.Id">@m.Nome (@m.CustoBase.ToString("C"))</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <!-- UPLOAD DE IMAGEM -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Imagem do Produto</label>
+                    <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                    @if (!string.IsNullOrEmpty(produto.ImagemUrl))
+                    {
+                        <div class="mt-2">
+                            <img src="@produto.ImagemUrl" class="img-thumbnail" style="max-height: 150px;" />
+                        </div>
+                    }
+                </div>
+
+                <div class="mb-4 form-check form-switch">
+                    <InputCheckbox @bind-Value="produto.Ativo" class="form-check-input" id="ativo" />
+                    <label class="form-check-label" for="ativo">Produto Ativo (Visível na loja)</label>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="/produtos" class="btn btn-light border">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">Criar Produto</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
 
 @code {
+    private Produto produto = new();
+    private List<Categoria> categorias = new();
+    private List<ModoEntrega> modos = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Carregar listas para preencher os Selects
+        categorias = await CategoriaService.GetAllAsync();
+        modos = await ModoEntregaService.GetAllAsync();
+    }
+
+    private async Task UploadImagem(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            // Cria nome único para evitar colisão
+            var nomeFicheiro = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
+            var pastaDestino = Path.Combine(Env.WebRootPath, "uploads", "produtos");
+
+            // Garante que a pasta existe
+            Directory.CreateDirectory(pastaDestino);
+
+            var caminhoCompleto = Path.Combine(pastaDestino, nomeFicheiro);
+
+            // Limite de tamanho: 5MB
+            await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            await using var fs = new FileStream(caminhoCompleto, FileMode.Create);
+            await stream.CopyToAsync(fs);
+
+            // Guarda o caminho relativo na BD
+            produto.ImagemUrl = $"/uploads/produtos/{nomeFicheiro}";
+        }
+    }
+
+    private async Task Guardar()
+    {
+        // Validar selects
+        if (produto.CategoriaId == 0 || produto.ModoEntregaId == 0)
+        {
+            // Podes adicionar lógica de erro aqui se quiseres
+            return;
+        }
+
+        await ProdutoService.AddAsync(produto);
+        Nav.NavigateTo("/produtos");
+    }
 }

@@ -2,18 +2,17 @@
 using MyCOLL.Data;
 using MyCOLL.Entities;
 
-// Ler ProdutoService.cs
-
-
 namespace MyCOLL.Services
 {
     public class ModoEntregaService
     {
         private readonly ApplicationDbContext _context;
+        private readonly LogService _log; // Injeção do Log
 
-        public ModoEntregaService(ApplicationDbContext context)
+        public ModoEntregaService(ApplicationDbContext context, LogService log)
         {
             _context = context;
+            _log = log;
         }
 
         public async Task<List<ModoEntrega>> GetAllAsync() =>
@@ -30,24 +29,42 @@ namespace MyCOLL.Services
         {
             modo.DataCriacao = DateTime.Now;
             modo.DataAtualizacao = null;
+
             _context.ModosEntrega.Add(modo);
             await _context.SaveChangesAsync();
+
+            await _log.AddAsync("Modo Entrega", "Criado", modo.Nome);
         }
 
         public async Task UpdateAsync(ModoEntrega modo)
         {
             modo.DataAtualizacao = DateTime.Now;
+
             _context.ModosEntrega.Update(modo);
             await _context.SaveChangesAsync();
+
+            await _log.AddAsync("Modo Entrega", "Atualizado", modo.Nome);
         }
 
         public async Task DeleteAsync(int id)
         {
-            var cat = await _context.ModosEntrega.FindAsync(id);
-            if (cat != null)
+            // Alterado para Include para verificar produtos antes de apagar
+            var modo = await _context.ModosEntrega
+                .Include(m => m.Produtos)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (modo != null)
             {
-                _context.ModosEntrega.Remove(cat);
+                // Impede apagar se já estiver em uso
+                if (modo.Produtos.Any())
+                {
+                    throw new InvalidOperationException($"Não é possível apagar '{modo.Nome}' porque existem produtos associados a este modo de entrega.");
+                }
+
+                _context.ModosEntrega.Remove(modo);
                 await _context.SaveChangesAsync();
+
+                await _log.AddAsync("Modo Entrega", "Eliminado", modo.Nome);
             }
         }
     }

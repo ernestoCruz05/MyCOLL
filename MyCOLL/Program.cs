@@ -24,6 +24,7 @@ builder.Services.AddScoped<ModoEntregaService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<LogService>();
+builder.Services.AddScoped<EncomendaService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -125,6 +126,9 @@ using (var scope = app.Services.CreateScope())
         await userManager.CreateAsync(staff, staffPass);
         await userManager.AddToRoleAsync(staff, "Gestor");
     }
+
+    await SeedEncomendas.SeedAsync(db, userManager);
+
 }
 
 

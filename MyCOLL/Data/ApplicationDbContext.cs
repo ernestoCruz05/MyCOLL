@@ -14,7 +14,8 @@ namespace MyCOLL.Data
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Produto> Produtos { get; set; }
         public DbSet<ModoEntrega> ModosEntrega { get; set; }
-
         public DbSet<LogEntry> Logs { get; set; }
+        public DbSet<Encomenda> Encomendas { get; set; }
+        public DbSet<DetalheEncomenda> DetalhesEncomenda { get; set; }
     }
 }

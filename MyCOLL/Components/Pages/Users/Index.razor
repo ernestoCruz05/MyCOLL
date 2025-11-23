@@ -1,59 +1,119 @@
 ﻿@page "/utilizadores"
-@attribute [Authorize(Roles="Admin,Gestor")]
-@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @using MyCOLL.Data
 @using MyCOLL.Services
-@inject UserAdminService Admin
-@inject NavigationManager Nav
+@using Microsoft.EntityFrameworkCore
+@inject UserAdminService UserService
+@inject UserManager<ApplicationUser> UserManager
+@inject IJSRuntime JS
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
-<h3>Utilizadores</h3>
+<PageTitle>Gestão de Utilizadores</PageTitle>
 
-@if (rows is null)
-{
-    <p><em>A carregar...</em></p>
-}
-else
-{
-    <div class="mb-3">
-        <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/utilizadores/novo")'>+ Novo Utilizador</button>
+<div class="container-fluid py-4">
+    <h2 class="fw-normal mb-4">Utilizadores</h2>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>EMAIL / USERNAME</th>
+                        <th>PERFIL (ROLES)</th>
+                        <th class="text-center">ESTADO</th>
+                        <!-- CORREÇÃO: Centrado e largura fixa para garantir que o título aparece -->
+                        <th class="text-center" style="width: 220px;">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (users == null)
+                    {
+                        <tr><td colspan="4" class="text-center py-4">A carregar...</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in users)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">@item.User.Email</div>
+                                    <small class="text-muted">ID: @item.User.Id.Substring(0, 8)...</small>
+                                </td>
+                                <td>
+                                    @foreach (var role in item.Roles)
+                                    {
+                                        <span class="badge bg-secondary me-1">@role</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.User.LockoutEnd != null && item.User.LockoutEnd > DateTimeOffset.Now)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Bloqueado</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+                                    }
+                                </td>
+                                <!-- CORREÇÃO: Botões Centrados e Estilo Clean -->
+                                <td class="text-center">
+                                    <!-- Botão de Roles (placeholder visual se quiseres adicionar lógica futura) -->
+                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Gerir Roles">
+                                        Roles
+                                    </button>
+
+                                    @if (!item.Roles.Contains("Admin"))
+                                    {
+                                        @if (item.User.LockoutEnd != null && item.User.LockoutEnd > DateTimeOffset.Now)
+                                        {
+                                            <button class="btn btn-sm btn-outline-success" @onclick="() => ToggleBloqueio(item.User, false)">
+                                                Ativar
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleBloqueio(item.User, true)">
+                                                Desativar
+                                            </button>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Email</th>
-                <th>Roles</th>
-                <th style="width:220px"></th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var r in rows)
-        {
-            <tr>
-                <td>@r.user.Email</td>
-                <td>@string.Join(", ", r.roles)</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => EditRoles(r.user.Id)">Roles</button>
-                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Disable(r.user.Id)">Desativar</button>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+</div>
 
 @code {
-    private List<(ApplicationUser user, IList<string> roles)>? rows;
+    private List<(ApplicationUser User, IList<string> Roles)>? users;
 
     protected override async Task OnInitializedAsync()
-        => rows = await Admin.GetAllAsync();
-
-    private async Task Disable(string id)
     {
-        await Admin.DisableUserAsync(id);
-        rows = await Admin.GetAllAsync();
-        StateHasChanged();
+        await Carregar();
     }
 
-    private void EditRoles(string id)
-        => Nav.NavigateTo($"/utilizadores/{id}/roles");
+    private async Task Carregar()
+    {
+        users = await UserService.GetAllAsync();
+    }
+
+    private async Task ToggleBloqueio(ApplicationUser user, bool bloquear)
+    {
+        var u = await UserManager.FindByIdAsync(user.Id);
+        if (u != null)
+        {
+            if (bloquear)
+            {
+                await UserManager.SetLockoutEndDateAsync(u, DateTimeOffset.MaxValue);
+            }
+            else
+            {
+                await UserManager.SetLockoutEndDateAsync(u, null);
+            }
+            await Carregar();
+        }
+    }
 }

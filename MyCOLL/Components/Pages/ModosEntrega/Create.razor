@@ -1,5 +1,71 @@
-<h3>Create</h3>
+@page "/modos-entrega/criar"
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject ModoEntregaService Service
+@inject NavigationManager Nav
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
+
+<PageTitle>Novo Modo de Entrega</PageTitle>
+
+<div class="container py-4" style="max-width: 700px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h4 class="mb-0 fw-bold">Criar Modo de Entrega</h4>
+        </div>
+        <div class="card-body p-4">
+            <EditForm Model="@modo" OnValidSubmit="Guardar">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger mb-3" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nome</label>
+                    <InputText @bind-Value="modo.Nome" class="form-control" placeholder="Ex: CTT Expresso" />
+                    <ValidationMessage For="@(() => modo.Nome)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Descrição</label>
+                    <InputTextArea @bind-Value="modo.Descricao" class="form-control" rows="3" placeholder="Detalhes sobre este método..." />
+                    <ValidationMessage For="@(() => modo.Descricao)" />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Custo Base (€)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">€</span>
+                            <InputNumber @bind-Value="modo.CustoBase" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => modo.CustoBase)" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Prazo Estimado (Dias)</label>
+                        <InputNumber @bind-Value="modo.PrazoEstimadoDias" class="form-control" />
+                        <ValidationMessage For="@(() => modo.PrazoEstimadoDias)" />
+                    </div>
+                </div>
+
+                <div class="mb-4 form-check form-switch">
+                    <InputCheckbox @bind-Value="modo.Ativo" class="form-check-input" id="ativoCheck" />
+                    <label class="form-check-label" for="ativoCheck">Ativo e disponível para produtos</label>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="/modos-entrega" class="btn btn-light border">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">Criar</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
 
 @code {
+    private ModoEntrega modo = new();
 
+    private async Task Guardar()
+    {
+        await Service.AddAsync(modo);
+        Nav.NavigateTo("/modos-entrega");
+    }
 }

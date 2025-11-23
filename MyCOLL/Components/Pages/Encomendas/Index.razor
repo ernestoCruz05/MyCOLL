@@ -1,0 +1,84 @@
+﻿@page "/encomendas"
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject EncomendaService Service
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
+
+<PageTitle>Encomendas</PageTitle>
+
+<div class="container-fluid py-4">
+    <h2 class="fw-normal mb-4">Gestão de Encomendas</h2>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#ID</th>
+                        <th>DATA</th>
+                        <th>CLIENTE</th>
+                        <th>TOTAL</th>
+                        <th class="text-center">ESTADO</th>
+                        <!-- CORREÇÃO: Centrado -->
+                        <th class="text-center">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (encomendas == null)
+                    {
+                        <tr><td colspan="6" class="text-center py-4">A carregar...</td></tr>
+                    }
+                    else if (!encomendas.Any())
+                    {
+                        <tr><td colspan="6" class="text-center py-4 text-muted">Sem encomendas registadas.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in encomendas)
+                        {
+                            <tr>
+                                <td class="fw-bold">#@item.Id</td>
+                                <td>@item.DataEncomenda.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <div class="fw-semibold">@item.Cliente?.UserName</div>
+                                    <small class="text-muted">@item.Cliente?.Email</small>
+                                </td>
+                                <td class="fw-bold">@item.Total.ToString("C2")</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill border @GetBadgeClass(item.Estado)">
+                                        @item.Estado
+                                    </span>
+                                </td>
+                                <!-- CORREÇÃO: Centrado e Botão Cinzento -->
+                                <td class="text-center">
+                                    <a href="/encomendas/detalhes/@item.Id" class="btn btn-sm btn-outline-secondary">
+                                        Ver Detalhes
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Encomenda>? encomendas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        encomendas = await Service.GetAllAsync();
+    }
+
+    private string GetBadgeClass(EstadoEncomenda estado) => estado switch
+    {
+        EstadoEncomenda.Pendente => "bg-warning-subtle text-warning-emphasis border-warning-subtle",
+        EstadoEncomenda.Paga => "bg-info-subtle text-info-emphasis border-info-subtle",
+        EstadoEncomenda.Expedida => "bg-primary-subtle text-primary-emphasis border-primary-subtle",
+        EstadoEncomenda.Entregue => "bg-success-subtle text-success-emphasis border-success-subtle",
+        EstadoEncomenda.Cancelada => "bg-danger-subtle text-danger-emphasis border-danger-subtle",
+        _ => "bg-secondary-subtle text-secondary-emphasis border-secondary-subtle"
+    };
+}

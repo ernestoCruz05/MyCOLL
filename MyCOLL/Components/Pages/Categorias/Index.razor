@@ -1,57 +1,76 @@
 ﻿@page "/categorias"
 @inject MyCOLL.Services.CategoriaService CategoriaService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime js
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor,Fornecedor")]
 
-<h3 class="mb-4">Categorias</h3>
+<PageTitle>Categorias</PageTitle>
 
-<a class="btn btn-success mb-3" href="/categorias/create">+ Nova Categoria</a>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-normal mb-0">Categorias</h2>
+        <a href="/categorias/create" class="btn btn-dark">
+            <i class="bi bi-plus-lg"></i> Nova Categoria
+        </a>
+    </div>
 
-@if (categorias == null)
-{
-    <p><em>A carregar...</em></p>
-}
-else if (!categorias.Any())
-{
-    <p><em>Sem categorias registadas.</em></p>
-}
-else
-{
-    <table class="table table-hover table-striped shadow-sm">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Descrição</th>
-                <th>Ativa</th>
-                <th style="width: 150px;">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var c in categorias)
-            {
-                <tr>
-                    <td>@c.Id</td>
-                    <td>@c.Nome</td>
-                    <td>@c.Descricao</td>
-                    <td>
-                        @if (c.Ativa)
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>NOME</th>
+                        <th>DESCRIÇÃO</th>
+                        <th class="text-center">ESTADO</th>
+                        <!-- MUDANÇA AQUI: text-center -->
+                        <th class="text-center" style="width: 200px;">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (categorias == null)
+                    {
+                        <tr><td colspan="5" class="text-center py-4">A carregar...</td></tr>
+                    }
+                    else if (!categorias.Any())
+                    {
+                        <tr><td colspan="5" class="text-center py-4 text-muted">Sem categorias registadas.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var c in categorias)
                         {
-                            <span class="badge bg-success">Ativa</span>
+                            <tr>
+                                <td class="text-muted small">#@c.Id</td>
+                                <td class="fw-semibold">@c.Nome</td>
+                                <td class="text-muted small">@c.Descricao</td>
+                                <td class="text-center">
+                                    @if (c.Ativa)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Ativa</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inativa</span>
+                                    }
+                                </td>
+                                <!-- MUDANÇA AQUI: text-center -->
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => EditCategoria(c.Id)">
+                                        Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCategoria(c.Id)">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
                         }
-                        else
-                        {
-                            <span class="badge bg-secondary">Inativa</span>
-                        }
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-warning me-1" @onclick="() => EditCategoria(c.Id)">Editar</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCategoria(c.Id)">Eliminar</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 @code {
     private List<MyCOLL.Entities.Categoria>? categorias;
@@ -75,6 +94,4 @@ else
             categorias = await CategoriaService.GetAllAsync();
         }
     }
-
-    [Inject] private IJSRuntime js { get; set; } = default!;
 }
