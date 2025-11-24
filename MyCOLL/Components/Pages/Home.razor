@@ -197,29 +197,24 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Carregar Dados
         var todasEncomendas = await EncomendaService.GetAllAsync();
         var todosProdutos = await ProdutoService.GetAllAsync();
         var todasCategorias = await CategoriaService.GetAllAsync();
 
-        // Carregar Logs
         ultimosLogs = await LogService.GetRecent(6);
 
-        // Calcular KPIs
         totalVendas = todasEncomendas.Sum(e => e.Total);
         encomendasPendentes = todasEncomendas.Count(e => e.Estado == EstadoEncomenda.Pendente);
         totalProdutos = todosProdutos.Count;
         totalCategorias = todasCategorias.Count;
 
-        // Listas Filtradas
         ultimasEncomendas = todasEncomendas.Take(5).ToList();
     }
 
-    // MUDANÇA IMPORTANTE AQUI: Usei 'text-dark' para Pendente e Paga para garantir contraste
     private string GetBadgeClass(EstadoEncomenda estado) => estado switch
     {
-        EstadoEncomenda.Pendente => "bg-warning-subtle text-dark border-warning", // Fundo amarelo claro, Texto escuro
-        EstadoEncomenda.Paga => "bg-info-subtle text-dark border-info",           // Fundo azul claro, Texto escuro
+        EstadoEncomenda.Pendente => "bg-warning-subtle text-dark border-warning",
+        EstadoEncomenda.Paga => "bg-info-subtle text-dark border-info",
         EstadoEncomenda.Expedida => "bg-primary-subtle text-primary-emphasis border-primary",
         EstadoEncomenda.Entregue => "bg-success-subtle text-success-emphasis border-success",
         EstadoEncomenda.Cancelada => "bg-danger-subtle text-danger-emphasis border-danger",
