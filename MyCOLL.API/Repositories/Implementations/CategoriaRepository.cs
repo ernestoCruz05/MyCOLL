@@ -1,7 +1,7 @@
-﻿using MyCOLL.API.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using MyCOLL.API.Data;
 using MyCOLL.API.Entities;
 using MyCOLL.API.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace MyCOLL.API.Repositories.Implementations
 {
@@ -15,9 +15,13 @@ namespace MyCOLL.API.Repositories.Implementations
         }
 
         public async Task<IEnumerable<Categoria>> GetAllAsync()
-            => await _context.Categorias.ToListAsync();
+        {
+            return await _context.Categorias.ToListAsync();
+        }
 
         public async Task<Categoria?> GetByIdAsync(int id)
-            => await _context.Categorias.FindAsync(id);
+        {
+            return await _context.Categorias.FindAsync(id);
+        }
     }
 }

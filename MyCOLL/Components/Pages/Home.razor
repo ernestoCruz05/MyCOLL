@@ -98,15 +98,15 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <!-- CORREÇÃO: table-dark para contraste ou table-light com texto escuro -->
-                        <thead class="table-light text-secondary small text-uppercase">
+                        <!-- Cabeçalho escuro para contraste -->
+                        <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Data</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                                <th></th>
+                                <th>CLIENTE</th>
+                                <th>DATA</th>
+                                <th>TOTAL</th>
+                                <th class="text-center">ESTADO</th>
+                                <th class="text-center">AÇÕES</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -119,20 +119,20 @@
                                 @foreach (var enc in ultimasEncomendas)
                                 {
                                     <tr>
-                                        <td class="fw-bold text-primary">#@enc.Id</td>
+                                        <td class="fw-bold">#@enc.Id</td>
                                         <td>
                                             <div class="fw-semibold">@enc.Cliente?.UserName</div>
-                                            <small class="text-muted" style="font-size: 0.75rem;">@enc.Cliente?.Email</small>
+                                            <small class="text-muted" style="font-size: 0.8rem;">@enc.Cliente?.Email</small>
                                         </td>
                                         <td>@enc.DataEncomenda.ToString("dd/MM")</td>
                                         <td class="fw-bold">@enc.Total.ToString("C2")</td>
-                                        <td>
-                                            <span class="badge rounded-pill border @GetBadgeClass(enc.Estado)">
+                                        <td class="text-center">
+                                            <!-- Badge com classes atualizadas para contraste -->
+                                            <span class="badge rounded-pill border px-3 py-2 @GetBadgeClass(enc.Estado)">
                                                 @enc.Estado
                                             </span>
                                         </td>
-                                        <td class="text-end">
-                                            <!-- CORREÇÃO: Botão com texto e estilo outline -->
+                                        <td class="text-center">
                                             <a href="/encomendas/detalhes/@enc.Id" class="btn btn-sm btn-outline-secondary">
                                                 Detalhes
                                             </a>
@@ -149,7 +149,7 @@
             </div>
         </div>
 
-        <!-- 3. ÚLTIMAS ATUALIZAÇÕES (Logs) - Trazido de volta -->
+        <!-- 3. ÚLTIMAS ATUALIZAÇÕES (Logs) -->
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
@@ -174,7 +174,7 @@
                                     <p class="mb-1 fw-semibold text-truncate">@log.Acao @log.Nome</p>
                                     @if (!string.IsNullOrEmpty(log.Descricao))
                                     {
-                                        <small class="text-muted d-block text-truncate">@log.Descricao</small>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 250px;">@log.Descricao</small>
                                     }
                                 </div>
                             }
@@ -215,13 +215,14 @@
         ultimasEncomendas = todasEncomendas.Take(5).ToList();
     }
 
+    // MUDANÇA IMPORTANTE AQUI: Usei 'text-dark' para Pendente e Paga para garantir contraste
     private string GetBadgeClass(EstadoEncomenda estado) => estado switch
     {
-        EstadoEncomenda.Pendente => "bg-warning-subtle text-warning-emphasis border-warning-subtle",
-        EstadoEncomenda.Paga => "bg-info-subtle text-info-emphasis border-info-subtle",
-        EstadoEncomenda.Expedida => "bg-primary-subtle text-primary-emphasis border-primary-subtle",
-        EstadoEncomenda.Entregue => "bg-success-subtle text-success-emphasis border-success-subtle",
-        EstadoEncomenda.Cancelada => "bg-danger-subtle text-danger-emphasis border-danger-subtle",
-        _ => "bg-secondary-subtle text-secondary-emphasis border-secondary-subtle"
+        EstadoEncomenda.Pendente => "bg-warning-subtle text-dark border-warning", // Fundo amarelo claro, Texto escuro
+        EstadoEncomenda.Paga => "bg-info-subtle text-dark border-info",           // Fundo azul claro, Texto escuro
+        EstadoEncomenda.Expedida => "bg-primary-subtle text-primary-emphasis border-primary",
+        EstadoEncomenda.Entregue => "bg-success-subtle text-success-emphasis border-success",
+        EstadoEncomenda.Cancelada => "bg-danger-subtle text-danger-emphasis border-danger",
+        _ => "bg-secondary-subtle text-secondary-emphasis border-secondary"
     };
 }

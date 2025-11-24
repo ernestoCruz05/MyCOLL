@@ -10,10 +10,12 @@ namespace MyCOLL.API.Data
         {
         }
 
-        public DbSet<Categoria> Categorias => Set<Categoria>();
-        public DbSet<Produto> Produtos => Set<Produto>();
-        public DbSet<ModoEntrega> ModosEntrega => Set<ModoEntrega>();
 
+        public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<Produto> Produtos { get; set; }
+        public DbSet<ModoEntrega> ModosEntrega { get; set; }
+        public DbSet<Encomenda> Encomendas { get; set; }
+        public DbSet<DetalheEncomenda> DetalhesEncomenda { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
