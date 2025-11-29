@@ -63,7 +63,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Ensure EF async extension is available
         var roles = await RoleManager.Roles.ToListAsync();
 
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();

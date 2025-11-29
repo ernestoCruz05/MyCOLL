@@ -1,6 +1,7 @@
 @page "/produtos/criar"
 @using MyCOLL.Entities
 @using MyCOLL.Services
+@using Microsoft.AspNetCore.Components.Forms
 @inject ProdutoService ProdutoService
 @inject CategoriaService CategoriaService
 @inject ModoEntregaService ModoEntregaService
@@ -24,56 +25,56 @@
                     <div class="col-md-8">
                         <label class="form-label fw-semibold">Nome do Produto</label>
                         <InputText @bind-Value="produto.Nome" class="form-control" placeholder="Ex: Selo Raro 1950" />
-                        <ValidationMessage For="@(() => produto.Nome)" />
                     </div>
                     <div class="col-md-4">
-                         <label class="form-label fw-semibold">Stock</label>
+                         <label class="form-label fw-semibold">Stock Inicial</label>
                          <InputNumber @bind-Value="produto.Stock" class="form-control" />
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Descrição</label>
-                    <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="4" />
+                    <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="3" />
+                </div>
+
+                <div class="row mb-3 bg-light p-3 rounded mx-0 border">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-primary">Preço Base (€)</label>
+                        <InputNumber @bind-Value="produto.PrecoBase" class="form-control" placeholder="Custo" />
+                        <small class="text-muted">Custo do produto</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-success">Margem Loja (%)</label>
+                        <InputNumber @bind-Value="produto.MargemLucro" class="form-control" />
+                        <small class="text-muted">Lucro sobre o base</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Preço Final (€)</label>
+                        <input type="text" class="form-control fw-bold" value="@((produto.PrecoBase * (1 + produto.MargemLucro/100)).ToString("C2"))" disabled />
+                        <small class="text-muted">Valor de venda</small>
+                    </div>
                 </div>
 
                 <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">Preço (€)</label>
-                        <InputNumber @bind-Value="produto.Preco" class="form-control" />
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold">Categoria</label>
                         <InputSelect @bind-Value="produto.CategoriaId" class="form-select">
                             <option value="0">-- Selecionar --</option>
-                            @foreach (var c in categorias)
-                            {
-                                <option value="@c.Id">@c.Nome</option>
-                            }
+                            @foreach (var c in categorias) { <option value="@c.Id">@c.Nome</option> }
                         </InputSelect>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold">Modo de Entrega</label>
                         <InputSelect @bind-Value="produto.ModoEntregaId" class="form-select">
                             <option value="0">-- Selecionar --</option>
-                            @foreach (var m in modos)
-                            {
-                                <option value="@m.Id">@m.Nome (@m.CustoBase.ToString("C"))</option>
-                            }
+                            @foreach (var m in modos) { <option value="@m.Id">@m.Nome</option> }
                         </InputSelect>
                     </div>
                 </div>
 
-                <!-- UPLOAD DE IMAGEM -->
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">Imagem do Produto</label>
-                    <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-                    @if (!string.IsNullOrEmpty(produto.ImagemUrl))
-                    {
-                        <div class="mt-2">
-                            <img src="@produto.ImagemUrl" class="img-thumbnail" style="max-height: 150px;" />
-                        </div>
-                    }
+                    <label class="form-label fw-semibold">Imagem</label>
+                    <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png,.webp" />
                 </div>
 
                 <div class="mb-4 form-check form-switch">
@@ -97,9 +98,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Carregar listas para preencher os Selects
         categorias = await CategoriaService.GetAllAsync();
         modos = await ModoEntregaService.GetAllAsync();
+
+        produto.MargemLucro = 20;
+        produto.Ativo = true;
     }
 
     private async Task UploadImagem(InputFileChangeEventArgs e)
@@ -107,34 +110,19 @@
         var file = e.File;
         if (file != null)
         {
-            // Cria nome único para evitar colisão
-            var nomeFicheiro = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
-            var pastaDestino = Path.Combine(Env.WebRootPath, "uploads", "produtos");
-
-            // Garante que a pasta existe
-            Directory.CreateDirectory(pastaDestino);
-
-            var caminhoCompleto = Path.Combine(pastaDestino, nomeFicheiro);
-
-            // Limite de tamanho: 5MB
-            await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-            await using var fs = new FileStream(caminhoCompleto, FileMode.Create);
+            var nome = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
+            var path = Path.Combine(Env.WebRootPath, "uploads", "produtos");
+            Directory.CreateDirectory(path);
+            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            await using var fs = new FileStream(Path.Combine(path, nome), FileMode.Create);
             await stream.CopyToAsync(fs);
-
-            // Guarda o caminho relativo na BD
-            produto.ImagemUrl = $"/uploads/produtos/{nomeFicheiro}";
+            produto.ImagemUrl = $"/uploads/produtos/{nome}";
         }
     }
 
     private async Task Guardar()
     {
-        // Validar selects
-        if (produto.CategoriaId == 0 || produto.ModoEntregaId == 0)
-        {
-            // Podes adicionar lógica de erro aqui se quiseres
-            return;
-        }
-
+        if (produto.CategoriaId == 0 || produto.ModoEntregaId == 0) return;
         await ProdutoService.AddAsync(produto);
         Nav.NavigateTo("/produtos");
     }

@@ -19,6 +19,7 @@ namespace MyCOLL.Services
             await _context.Produtos
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
+                .Include(p => p.Fornecedor)
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
 
@@ -30,6 +31,7 @@ namespace MyCOLL.Services
 
         public async Task AddAsync(Produto produto)
         {
+            produto.Preco = produto.PrecoBase + (produto.PrecoBase * (produto.MargemLucro / 100));
             produto.DataCriacao = DateTime.Now;
             produto.DataAtualizacao = null;
 
@@ -41,6 +43,8 @@ namespace MyCOLL.Services
 
         public async Task UpdateAsync(Produto produto)
         {
+            produto.Preco = produto.PrecoBase + (produto.PrecoBase * (produto.MargemLucro / 100));
+
             produto.DataAtualizacao = DateTime.Now;
 
             _context.Produtos.Update(produto);

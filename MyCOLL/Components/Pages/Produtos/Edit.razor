@@ -11,11 +11,7 @@
 <PageTitle>Editar Produto</PageTitle>
 
 <div class="container py-4" style="max-width: 800px;">
-    @if (produto == null)
-    {
-         <div class="text-center py-5">A carregar...</div>
-    }
-    else
+    @if (produto != null)
     {
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
@@ -24,7 +20,6 @@
             <div class="card-body p-4">
                 <EditForm Model="@produto" OnValidSubmit="Guardar">
                     <DataAnnotationsValidator />
-                    <ValidationSummary class="text-danger mb-3" />
 
                     <div class="row mb-3">
                         <div class="col-md-8">
@@ -39,42 +34,48 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Descrição</label>
-                        <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="4" />
+                        <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="3" />
+                    </div>
+
+                    <!-- PREÇOS -->
+                    <div class="row mb-3 bg-light p-3 rounded mx-0 border">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-primary">Preço Base (€)</label>
+                            <InputNumber @bind-Value="produto.PrecoBase" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-success">Margem (%)</label>
+                            <InputNumber @bind-Value="produto.MargemLucro" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Final (€)</label>
+                            <input type="text" class="form-control fw-bold" value="@((produto.PrecoBase * (1 + produto.MargemLucro/100)).ToString("C2"))" disabled />
+                        </div>
                     </div>
 
                     <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Preço (€)</label>
-                            <InputNumber @bind-Value="produto.Preco" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Categoria</label>
                             <InputSelect @bind-Value="produto.CategoriaId" class="form-select">
-                                @foreach (var c in categorias)
-                                {
-                                    <option value="@c.Id">@c.Nome</option>
-                                }
+                                @foreach (var c in categorias) { <option value="@c.Id">@c.Nome</option> }
                             </InputSelect>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Modo de Entrega</label>
                             <InputSelect @bind-Value="produto.ModoEntregaId" class="form-select">
-                                @foreach (var m in modos)
-                                {
-                                    <option value="@m.Id">@m.Nome</option>
-                                }
+                                @foreach (var m in modos) { <option value="@m.Id">@m.Nome</option> }
                             </InputSelect>
                         </div>
                     </div>
 
+                    <!-- Imagem -->
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Alterar Imagem</label>
-                        <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                        <label class="form-label fw-semibold">Imagem</label>
+                        <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png" />
                         @if (!string.IsNullOrEmpty(produto.ImagemUrl))
                         {
-                            <div class="mt-2 p-2 border rounded bg-light d-inline-block">
-                                <small class="d-block text-muted mb-1">Imagem Atual:</small>
-                                <img src="@produto.ImagemUrl" class="img-fluid" style="max-height: 100px;" />
+                            <div class="mt-2">
+                                <img src="@produto.ImagemUrl" class="img-thumbnail" style="height: 100px;" />
                             </div>
                         }
                     </div>
@@ -84,7 +85,7 @@
                         <label class="form-check-label" for="ativo">Ativo</label>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <div class="d-flex justify-content-end gap-2 pt-3">
                         <a href="/produtos" class="btn btn-light border">Cancelar</a>
                         <button type="submit" class="btn btn-primary px-4">Guardar Alterações</button>
                     </div>
@@ -96,7 +97,6 @@
 
 @code {
     [Parameter] public int Id { get; set; }
-
     private Produto? produto;
     private List<Categoria> categorias = new();
     private List<ModoEntrega> modos = new();
@@ -106,8 +106,6 @@
         categorias = await CategoriaService.GetAllAsync();
         modos = await ModoEntregaService.GetAllAsync();
         produto = await ProdutoService.GetByIdAsync(Id);
-
-        if (produto == null) Nav.NavigateTo("/produtos");
     }
 
     private async Task UploadImagem(InputFileChangeEventArgs e)
@@ -115,17 +113,13 @@
         var file = e.File;
         if (file != null && produto != null)
         {
-            var nomeFicheiro = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
-            var pastaDestino = Path.Combine(Env.WebRootPath, "uploads", "produtos");
-            Directory.CreateDirectory(pastaDestino);
-
-            var caminhoCompleto = Path.Combine(pastaDestino, nomeFicheiro);
-
-            await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-            await using var fs = new FileStream(caminhoCompleto, FileMode.Create);
+            var nome = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
+            var path = Path.Combine(Env.WebRootPath, "uploads", "produtos");
+            Directory.CreateDirectory(path);
+            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            await using var fs = new FileStream(Path.Combine(path, nome), FileMode.Create);
             await stream.CopyToAsync(fs);
-
-            produto.ImagemUrl = $"/uploads/produtos/{nomeFicheiro}";
+            produto.ImagemUrl = $"/uploads/produtos/{nome}";
         }
     }
 

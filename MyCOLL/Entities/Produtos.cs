@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MyCOLL.Data;
 
 namespace MyCOLL.Entities
 {
@@ -13,7 +14,13 @@ namespace MyCOLL.Entities
         [StringLength(500)]
         public string? Descricao { get; set; }
 
-        [Column(TypeName = "decimal(10,2)")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PrecoBase { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal MargemLucro { get; set; } // 0 -> 100% 
+
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Preco { get; set; }
 
         public int Stock { get; set; }
@@ -25,6 +32,11 @@ namespace MyCOLL.Entities
 
         public int ModoEntregaId { get; set; }
         public ModoEntrega? ModoEntrega { get; set; }
+
+        public string? FornecedorId { get; set; }
+
+        [ForeignKey("FornecedorId")]
+        public ApplicationUser? Fornecedor { get; set; }
 
         [StringLength(300)]
         public string? ImagemUrl { get; set; }

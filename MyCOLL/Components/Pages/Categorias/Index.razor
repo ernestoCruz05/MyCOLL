@@ -14,6 +14,14 @@
         </a>
     </div>
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -23,7 +31,6 @@
                         <th>NOME</th>
                         <th>DESCRIÇÃO</th>
                         <th class="text-center">ESTADO</th>
-                        <!-- MUDANÇA AQUI: text-center -->
                         <th class="text-center" style="width: 200px;">AÇÕES</th>
                     </tr>
                 </thead>
@@ -54,7 +61,6 @@
                                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inativa</span>
                                     }
                                 </td>
-                                <!-- MUDANÇA AQUI: text-center -->
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => EditCategoria(c.Id)">
                                         Editar
@@ -74,8 +80,14 @@
 
 @code {
     private List<MyCOLL.Entities.Categoria>? categorias;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+    }
+
+    private async Task CarregarDados()
     {
         categorias = await CategoriaService.GetAllAsync();
     }
@@ -87,11 +99,23 @@
 
     private async Task DeleteCategoria(int id)
     {
+        errorMessage = null;
+
         var confirmar = await js.InvokeAsync<bool>("confirm", "Tem a certeza que quer eliminar esta categoria?");
+
         if (confirmar)
         {
-            await CategoriaService.DeleteAsync(id);
-            categorias = await CategoriaService.GetAllAsync();
+            try
+            {
+                await CategoriaService.DeleteAsync(id);
+                await CarregarDados();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+
+
+            }
         }
     }
 }

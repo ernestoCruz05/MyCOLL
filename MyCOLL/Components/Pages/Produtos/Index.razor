@@ -5,7 +5,7 @@
 @inject CategoriaService CategoriaService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor,Fornecedor")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
 <PageTitle>Gestão de Produtos</PageTitle>
 
@@ -17,7 +17,6 @@
         </a>
     </div>
 
-    <!-- Filtros mantidos iguais... -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body bg-light rounded">
             <div class="row g-3">
@@ -64,7 +63,6 @@
                         <th>PREÇO</th>
                         <th>STOCK</th>
                         <th class="text-center">ESTADO</th>
-                        <!-- MUDANÇA AQUI: text-center -->
                         <th class="text-center">AÇÕES</th>
                     </tr>
                 </thead>
@@ -117,7 +115,6 @@
                                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pendente</span>
                                     }
                                 </td>
-                                <!-- MUDANÇA AQUI: text-center -->
                                 <td class="text-center">
                                     <a href="/produtos/editar/@item.Id" class="btn btn-sm btn-outline-secondary me-1">
                                         Editar
@@ -136,7 +133,6 @@
 </div>
 
 @code {
-    // Código C# mantém-se igual ao anterior
     private List<Produto> todosProdutos = new();
     private List<Categoria> categorias = new();
     private string searchTerm = "";
