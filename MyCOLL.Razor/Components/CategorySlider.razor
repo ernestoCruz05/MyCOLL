@@ -1,0 +1,82 @@
+@using MyCOLL.UIComponents.Models
+
+<div class="category-slider-container">
+    <button class="slider-arrow slider-arrow-left" @onclick="ScrollLeft" disabled="@(!canScrollLeft)">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    
+    <div class="category-slider" @ref="sliderRef">
+        <div class="category-chip @(SelectedCategoryId == null ? "active" : "")" 
+             @onclick="() => SelectCategory(null)">
+            <i class="fas fa-layer-group"></i>
+            <span>All Collections</span>
+        </div>
+        
+        @foreach (var category in Categories)
+        {
+            <div class="category-chip @(SelectedCategoryId == category.Id ? "active" : "")"
+                 @onclick="() => SelectCategory(category.Id)">
+                <i class="@GetCategoryIcon(category.Nome)"></i>
+                <span>@category.Nome</span>
+            </div>
+        }
+    </div>
+    
+    <button class="slider-arrow slider-arrow-right" @onclick="ScrollRight" disabled="@(!canScrollRight)">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+</div>
+
+@code {
+    [Parameter] public List<Categoria> Categories { get; set; } = new();
+    [Parameter] public int? SelectedCategoryId { get; set; }
+    [Parameter] public EventCallback<int?> OnCategorySelected { get; set; }
+
+    private ElementReference sliderRef;
+    private bool canScrollLeft = false;
+    private bool canScrollRight = true;
+
+    private async Task SelectCategory(int? categoryId)
+    {
+        await OnCategorySelected.InvokeAsync(categoryId);
+    }
+
+    private async Task ScrollLeft()
+    {
+        // Scroll logic would be handled via JS interop in production
+        canScrollLeft = false;
+        canScrollRight = true;
+    }
+
+    private async Task ScrollRight()
+    {
+        // Scroll logic would be handled via JS interop in production
+        canScrollLeft = true;
+        canScrollRight = false;
+    }
+
+    private string GetCategoryIcon(string categoryName)
+    {
+        // Map category names to appropriate icons for the historian theme
+        var name = categoryName.ToLower();
+        
+        return name switch
+        {
+            var n when n.Contains("coin") || n.Contains("moeda") => "fas fa-coins",
+            var n when n.Contains("stamp") || n.Contains("selo") => "fas fa-stamp",
+            var n when n.Contains("book") || n.Contains("livro") => "fas fa-book",
+            var n when n.Contains("map") || n.Contains("mapa") => "fas fa-map",
+            var n when n.Contains("art") || n.Contains("arte") => "fas fa-palette",
+            var n when n.Contains("photo") || n.Contains("foto") => "fas fa-camera-retro",
+            var n when n.Contains("vintage") || n.Contains("antigo") => "fas fa-hourglass-half",
+            var n when n.Contains("jewelry") || n.Contains("joia") => "fas fa-gem",
+            var n when n.Contains("clock") || n.Contains("relogio") => "fas fa-clock",
+            var n when n.Contains("furniture") || n.Contains("movel") => "fas fa-couch",
+            var n when n.Contains("weapon") || n.Contains("arma") => "fas fa-shield-alt",
+            var n when n.Contains("document") || n.Contains("documento") => "fas fa-file-alt",
+            var n when n.Contains("ceramic") || n.Contains("ceramica") => "fas fa-wine-glass-alt",
+            var n when n.Contains("textile") || n.Contains("textil") => "fas fa-tshirt",
+            _ => "fas fa-archive"
+        };
+    }
+}

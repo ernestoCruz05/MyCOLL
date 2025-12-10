@@ -1,0 +1,182 @@
+@using MyCOLL.UIComponents.Models
+@using MyCOLL.UIComponents.Services
+
+@if (IsVisible && Product != null)
+{
+    <div class="modal-backdrop" @onclick="Close">
+        <div class="product-modal" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">
+                    <i class="fas fa-scroll"></i> Artifact Details
+                </h4>
+                <button class="modal-close" @onclick="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <div class="modal-content-grid">
+                    <!-- Product Image -->
+                    <div class="modal-image-section">
+                        @if (!string.IsNullOrEmpty(Product.ImagemUrl))
+                        {
+                            <img src="@Product.ImagemUrl" alt="@Product.Nome" class="modal-image" />
+                        }
+                        else
+                        {
+                            <div class="modal-image-placeholder">
+                                <i class="fas fa-archive"></i>
+                                <span>@Product.Nome[0]</span>
+                            </div>
+                        }
+                        
+                        <!-- Stock Status -->
+                        <div class="stock-info @GetStockClass()">
+                            @if (Product.Stock <= 0)
+                            {
+                                <i class="fas fa-times-circle"></i>
+                                <span>Out of Stock</span>
+                            }
+                            else if (Product.Stock <= 3)
+                            {
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Only @Product.Stock remaining</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-check-circle"></i>
+                                <span>In Stock (@Product.Stock available)</span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Product Details -->
+                    <div class="modal-details-section">
+                        <h2 class="product-name">@Product.Nome</h2>
+                        
+                        <div class="product-price-large">
+                            <span class="currency">€</span>
+                            <span class="amount">@Product.Preco.ToString("N2")</span>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(Product.Descricao))
+                        {
+                            <div class="product-description-full">
+                                <h5><i class="fas fa-info-circle"></i> Description</h5>
+                                <p>@Product.Descricao</p>
+                            </div>
+                        }
+                        
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-tag"></i>
+                                <span>Category: @(CategoryName ?? "Uncategorized")</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-barcode"></i>
+                                <span>Item ID: #@Product.Id</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Quantity Selector -->
+                        @if (Product.Stock > 0)
+                        {
+                            <div class="quantity-section">
+                                <label>Quantity:</label>
+                                <div class="quantity-controls">
+                                    <button class="qty-btn" @onclick="DecreaseQuantity" disabled="@(quantity <= 1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="qty-value">@quantity</span>
+                                    <button class="qty-btn" @onclick="IncreaseQuantity" disabled="@(quantity >= Product.Stock)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <span class="qty-total">Total: €@((Product.Preco * quantity).ToString("N2"))</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button class="btn-secondary" @onclick="Close">
+                    <i class="fas fa-arrow-left"></i> Continue Browsing
+                </button>
+                @if (Product.Stock > 0)
+                {
+                    <button class="btn-primary" @onclick="AddToCart">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                }
+                else
+                {
+                    <button class="btn-disabled" disabled>
+                        <i class="fas fa-times"></i> Unavailable
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] public CartService CartService { get; set; } = default!;
+
+    [Parameter] public Produto? Product { get; set; }
+    [Parameter] public string? CategoryName { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<(Produto, int)> OnAddToCart { get; set; }
+
+    private int quantity = 1;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            quantity = 1;
+        }
+    }
+
+    private void IncreaseQuantity()
+    {
+        if (Product != null && quantity < Product.Stock)
+            quantity++;
+    }
+
+    private void DecreaseQuantity()
+    {
+        if (quantity > 1)
+            quantity--;
+    }
+
+    private async Task AddToCart()
+    {
+        if (Product != null && Product.Stock > 0)
+        {
+            CartService.AddItem(Product, quantity);
+            await OnAddToCart.InvokeAsync((Product, quantity));
+            await Close();
+        }
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private string GetStockClass()
+    {
+        if (Product == null) return "";
+        return Product.Stock switch
+        {
+            <= 0 => "out-of-stock",
+            <= 3 => "low-stock",
+            _ => "in-stock"
+        };
+    }
+}

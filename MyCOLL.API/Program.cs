@@ -50,6 +50,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Add CORS policy for MAUI app and Dev Tunnels
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMauiApp", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 builder.Services.AddScoped<IModoEntregaRepository, ModoEntregaRepository>();
@@ -74,6 +85,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Enable CORS - must be before Authentication/Authorization
+app.UseCors("AllowMauiApp");
 
 app.UseAuthentication();
 app.UseAuthorization();

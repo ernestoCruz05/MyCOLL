@@ -1,0 +1,127 @@
+﻿@using MyCOLL.UIComponents.Models
+@using MyCOLL.UIComponents.Services
+
+<div class="product-card @(IsInCart ? "in-cart" : "")">
+    <!-- Product Image Area -->
+    <div class="product-image">
+        @if (!string.IsNullOrEmpty(Product.ImagemUrl))
+        {
+            <img src="@Product.ImagemUrl" alt="@Product.Nome" />
+        }
+        else
+        {
+            <div class="image-placeholder">
+                <i class="fas fa-archive"></i>
+                <span>@GetInitials(Product.Nome)</span>
+            </div>
+        }
+        
+        <!-- Stock Badge -->
+        @if (Product.Stock <= 0)
+        {
+            <div class="stock-badge out-of-stock">
+                <i class="fas fa-times-circle"></i> Sold Out
+            </div>
+        }
+        else if (Product.Stock <= 3)
+        {
+            <div class="stock-badge low-stock">
+                <i class="fas fa-exclamation-triangle"></i> Only @Product.Stock left
+            </div>
+        }
+        
+        <!-- Quick Actions Overlay -->
+        <div class="product-overlay">
+            <button class="overlay-btn" @onclick="OnInspectClick" title="View Details">
+                <i class="fas fa-eye"></i>
+            </button>
+            @if (Product.Stock > 0)
+            {
+                <button class="overlay-btn add-cart-btn" @onclick="AddToCartClick" title="Add to Cart">
+                    <i class="fas fa-cart-plus"></i>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-info">
+        <h5 class="product-title" title="@Product.Nome">@TruncateText(Product.Nome, 28)</h5>
+        
+        @if (!string.IsNullOrEmpty(Product.Descricao))
+        {
+            <p class="product-description">@TruncateText(Product.Descricao, 60)</p>
+        }
+        
+        <div class="product-footer">
+            <div class="product-price">
+                <span class="price-currency">€</span>
+                <span class="price-value">@Product.Preco.ToString("N2")</span>
+            </div>
+            
+            <button class="btn-inspect" @onclick="OnInspectClick" disabled="@(!Product.Ativo)">
+                <i class="fas fa-search"></i>
+                <span>Inspect</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Cart Indicator -->
+    @if (IsInCart)
+    {
+        <div class="cart-indicator">
+            <i class="fas fa-check-circle"></i> In Cart (@CartQuantity)
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] public CartService CartService { get; set; } = default!;
+
+    [Parameter] public Produto Product { get; set; } = new();
+    [Parameter] public EventCallback<Produto> OnInspect { get; set; }
+    [Parameter] public EventCallback<Produto> OnAddToCart { get; set; }
+
+    private bool IsInCart => CartService.ContainsProduct(Product.Id);
+    private int CartQuantity => CartService.GetQuantity(Product.Id);
+
+    protected override void OnInitialized()
+    {
+        CartService.OnCartChanged += StateHasChanged;
+    }
+
+    private async Task OnInspectClick()
+    {
+        await OnInspect.InvokeAsync(Product);
+    }
+
+    private async Task AddToCartClick()
+    {
+        if (Product.Stock > 0)
+        {
+            CartService.AddItem(Product);
+            await OnAddToCart.InvokeAsync(Product);
+        }
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length >= 2)
+            return $"{words[0][0]}{words[1][0]}".ToUpper();
+        return name.Length >= 2 ? name[..2].ToUpper() : name.ToUpper();
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text ?? string.Empty;
+        return text[..(maxLength - 3)] + "...";
+    }
+
+    public void Dispose()
+    {
+        CartService.OnCartChanged -= StateHasChanged;
+    }
+}

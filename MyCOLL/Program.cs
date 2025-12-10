@@ -5,6 +5,7 @@ using MyCOLL.Components;
 using MyCOLL.Components.Account;
 using MyCOLL.Data;
 using MyCOLL.Services;
+using MyCOLL.UIComponents.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
+builder.Services.AddHttpClient<CollectionApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5000/");
+});
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();

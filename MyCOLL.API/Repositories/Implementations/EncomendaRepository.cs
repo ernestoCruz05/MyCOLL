@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MyCOLL.API.Data;
+﻿using MyCOLL.API.Data;
 using MyCOLL.API.Entities;
 using MyCOLL.API.Repositories.Interfaces;
 
