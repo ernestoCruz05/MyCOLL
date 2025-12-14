@@ -20,6 +20,7 @@ namespace MyCOLL.API.Repositories.Implementations
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
                 .Where(p => p.Ativo)
+                .OrderByDescending(p => p.DataCriacao)
                 .ToListAsync();
         }
 
@@ -29,6 +30,7 @@ namespace MyCOLL.API.Repositories.Implementations
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
                 .Where(p => p.Ativo && p.CategoriaId == categoriaId)
+                .OrderByDescending(p => p.DataCriacao)
                 .ToListAsync();
         }
 
@@ -38,6 +40,34 @@ namespace MyCOLL.API.Repositories.Implementations
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
                 .FirstOrDefaultAsync(p => p.Id == id && p.Ativo);
+        }
+
+        public async Task<IEnumerable<Produto>> SearchAsync(string searchTerm)
+        {
+            var term = searchTerm.ToLower();
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .Where(p => p.Ativo &&
+                    (p.Nome.ToLower().Contains(term) ||
+                     (p.Descricao != null && p.Descricao.ToLower().Contains(term)) ||
+                     (p.Categoria != null && p.Categoria.Nome.ToLower().Contains(term))))
+                .OrderByDescending(p => p.DataCriacao)
+                .ToListAsync();
+        }
+
+        public async Task<Produto?> GetRandomAsync()
+        {
+            var count = await _context.Produtos.CountAsync(p => p.Ativo);
+            if (count == 0) return null;
+
+            var skip = new Random().Next(0, count);
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .Where(p => p.Ativo)
+                .Skip(skip)
+                .FirstOrDefaultAsync();
         }
     }
 }

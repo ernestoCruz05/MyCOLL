@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyCOLL.API.DTOs;
 using MyCOLL.API.Entities;
 using MyCOLL.API.Repositories.Interfaces;
+using System.Security.Claims;
 
 namespace MyCOLL.API.Controllers
 {
@@ -23,21 +25,78 @@ namespace MyCOLL.API.Controllers
             _modoEntregaRepo = modoEntregaRepo;
         }
 
+        /// <summary>
+        /// Lista todas as encomendas (Admin/Gestor)
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin,Gestor")]
+        public async Task<ActionResult<IEnumerable<Encomenda>>> GetAll()
+        {
+            var encomendas = await _encomendaRepo.GetAllAsync();
+            return Ok(encomendas);
+        }
+
+        /// <summary>
+        /// Lista encomendas do cliente autenticado
+        /// </summary>
+        [HttpGet("minhas")]
+        [Authorize(Roles = "Cliente")]
+        public async Task<ActionResult<IEnumerable<Encomenda>>> GetMinhasEncomendas()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Utilizador não autenticado" });
+
+            var encomendas = await _encomendaRepo.GetByClienteIdAsync(userId);
+            return Ok(encomendas);
+        }
+
+        /// <summary>
+        /// Obtém encomenda por ID
+        /// </summary>
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<ActionResult<Encomenda>> GetById(int id)
+        {
+            var encomenda = await _encomendaRepo.GetByIdAsync(id);
+            if (encomenda == null)
+                return NotFound(new { message = "Encomenda não encontrada" });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin") || User.IsInRole("Gestor");
+
+            if (!isAdmin && encomenda.ClienteId != userId)
+                return Forbid();
+
+            return Ok(encomenda);
+        }
+
+        /// <summary>
+        /// Cria nova encomenda (Cliente autenticado)
+        /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Cliente")]
         public async Task<ActionResult<Encomenda>> Create([FromBody] EncomendaCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // 1. Validar Modo de Entrega e obter custo
-            var modoEntrega = await _modoEntregaRepo.GetByIdAsync(dto.ModoEntregaId);
-            if (modoEntrega == null) return BadRequest("Modo de entrega inválido.");
+            // SEGURANÇA: Obter ID do utilizador do TOKEN!
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Utilizador não autenticado" });
 
-            // 2. Construir a Entidade Encomenda
+            var modoEntrega = await _modoEntregaRepo.GetByIdAsync(dto.ModoEntregaId);
+            if (modoEntrega == null || !modoEntrega.Ativo)
+                return BadRequest(new { message = "Modo de entrega inválido" });
+
+            if (dto.Itens == null || !dto.Itens.Any())
+                return BadRequest(new { message = "A encomenda deve ter pelo menos 1 item" });
+
             var novaEncomenda = new Encomenda
             {
-                ClienteId = dto.ClienteId,
+                ClienteId = userId,
                 DataEncomenda = DateTime.Now,
-                Estado = EstadoEncomenda.Pendente, // Começa sempre pendente
+                Estado = EstadoEncomenda.Pendente,
                 MoradaEnvio = dto.MoradaEnvio,
                 MetodoEntregaNome = modoEntrega.Nome,
                 CustoEntrega = modoEntrega.CustoBase,
@@ -46,39 +105,91 @@ namespace MyCOLL.API.Controllers
 
             decimal totalProdutos = 0;
 
-            // 3. Processar Itens (Validar stock e obter preço atual)
             foreach (var itemDto in dto.Itens)
             {
+                if (itemDto.Quantidade <= 0)
+                    return BadRequest(new { message = "Quantidade deve ser maior que zero" });
+
                 var produto = await _produtoRepo.GetByIdAsync(itemDto.ProdutoId);
 
                 if (produto == null)
-                    return BadRequest($"Produto {itemDto.ProdutoId} não encontrado.");
+                    return BadRequest(new { message = $"Produto {itemDto.ProdutoId} não encontrado" });
 
                 if (!produto.Ativo)
-                    return BadRequest($"Produto '{produto.Nome}' não está disponível.");
+                    return BadRequest(new { message = $"Produto '{produto.Nome}' não está disponível" });
 
-                // Opcional: Validar Stock aqui
-                // if (produto.Stock < itemDto.Quantidade) return BadRequest(...)
+                if (produto.Stock < itemDto.Quantidade)
+                    return BadRequest(new { message = $"Stock insuficiente para '{produto.Nome}'. Disponível: {produto.Stock}" });
 
                 var detalhe = new DetalheEncomenda
                 {
                     ProdutoId = produto.Id,
                     Quantidade = itemDto.Quantidade,
-                    PrecoUnitario = produto.Preco // Usa o preço DA BASE DE DADOS, nunca do JSON
+                    PrecoUnitario = produto.Preco
                 };
 
                 novaEncomenda.Itens.Add(detalhe);
                 totalProdutos += (detalhe.PrecoUnitario * detalhe.Quantidade);
             }
 
-            // 4. Calcular Total Final
             novaEncomenda.Total = totalProdutos + novaEncomenda.CustoEntrega;
 
-            // 5. Guardar
             await _encomendaRepo.CreateAsync(novaEncomenda);
 
-            // Retornar 201 Created com o ID da nova encomenda
-            return CreatedAtAction(nameof(Create), new { id = novaEncomenda.Id }, novaEncomenda);
+            return CreatedAtAction(nameof(GetById), new { id = novaEncomenda.Id }, new
+            {
+                id = novaEncomenda.Id,
+                total = novaEncomenda.Total,
+                estado = novaEncomenda.Estado.ToString(),
+                message = "Encomenda criada com sucesso!"
+            });
         }
+
+        /// <summary>
+        /// Atualiza estado da encomenda (Admin/Gestor)
+        /// </summary>
+        [HttpPatch("{id}/estado")]
+        [Authorize(Roles = "Admin,Gestor")]
+        public async Task<IActionResult> UpdateEstado(int id, [FromBody] UpdateEstadoDto dto)
+        {
+            var encomenda = await _encomendaRepo.GetByIdAsync(id);
+            if (encomenda == null)
+                return NotFound(new { message = "Encomenda não encontrada" });
+
+            if (!IsValidTransition(encomenda.Estado, dto.NovoEstado))
+                return BadRequest(new { message = $"Transição de '{encomenda.Estado}' para '{dto.NovoEstado}' não é permitida" });
+
+            try
+            {
+                await _encomendaRepo.UpdateEstadoAsync(id, dto.NovoEstado);
+                return Ok(new { message = $"Estado atualizado para '{dto.NovoEstado}'" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        private static bool IsValidTransition(EstadoEncomenda atual, EstadoEncomenda novo)
+        {
+            if (atual == EstadoEncomenda.Entregue || atual == EstadoEncomenda.Cancelada)
+                return false;
+
+            return (atual, novo) switch
+            {
+                (EstadoEncomenda.Pendente, EstadoEncomenda.Paga) => true,
+                (EstadoEncomenda.Pendente, EstadoEncomenda.Cancelada) => true,
+                (EstadoEncomenda.Paga, EstadoEncomenda.Expedida) => true,
+                (EstadoEncomenda.Paga, EstadoEncomenda.Cancelada) => true,
+                (EstadoEncomenda.Expedida, EstadoEncomenda.Entregue) => true,
+                (EstadoEncomenda.Expedida, EstadoEncomenda.Cancelada) => true,
+                _ => false
+            };
+        }
+    }
+
+    public class UpdateEstadoDto
+    {
+        public EstadoEncomenda NovoEstado { get; set; }
     }
 }
