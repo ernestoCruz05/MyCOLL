@@ -131,13 +131,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 // Servir ficheiros estáticos (imagens)
+app.UseCors("AllowMauiApp"); // Apply CORS policy first
 app.UseStaticFiles();
-
-// Enable CORS - must be before Authentication/Authorization
-app.UseCors("AllowMauiApp");
 
 app.UseAuthentication();
 app.UseAuthorization();

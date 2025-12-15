@@ -1,5 +1,6 @@
 @using MyCOLL.UIComponents.Models
 @using MyCOLL.UIComponents.Services
+@inject CollectionApiService ApiService
 
 @if (IsVisible && Product != null)
 {
@@ -22,7 +23,11 @@
                     <div class="modal-image-section">
                         @if (!string.IsNullOrEmpty(Product.ImagemUrl))
                         {
-                            <img src="@Product.ImagemUrl" alt="@Product.Nome" class="modal-image" />
+                            <img src="@GetFullImageUrl(Product.ImagemUrl)" alt="@Product.Nome" class="modal-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div class="modal-image-placeholder" style="display: none;">
+                                <i class="fas fa-archive"></i>
+                                <span>@Product.Nome[0]</span>
+                            </div>
                         }
                         else
                         {
@@ -140,6 +145,18 @@
         {
             quantity = 1;
         }
+    }
+
+    private string GetFullImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl))
+            return string.Empty;
+
+        if (imageUrl.StartsWith("http://") || imageUrl.StartsWith("https://"))
+            return imageUrl;
+
+        var baseUrl = ApiService.GetBaseUrl();
+        return $"{baseUrl.TrimEnd('/')}{imageUrl}";
     }
 
     private void IncreaseQuantity()

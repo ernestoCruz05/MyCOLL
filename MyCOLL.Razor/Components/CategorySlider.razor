@@ -1,4 +1,6 @@
 @using MyCOLL.UIComponents.Models
+@using MyCOLL.UIComponents.Services
+@inject CollectionApiService ApiService
 
 <div class="category-slider-container">
     <button class="slider-arrow slider-arrow-left" @onclick="ScrollLeft" disabled="@(!canScrollLeft)">
@@ -16,7 +18,17 @@
         {
             <div class="category-chip @(SelectedCategoryId == category.Id ? "active" : "")"
                  @onclick="() => SelectCategory(category.Id)">
-                <i class="@GetCategoryIcon(category.Nome)"></i>
+                @if (!string.IsNullOrEmpty(category.ImagemUrl))
+                {
+                    <img src="@GetFullImageUrl(category.ImagemUrl)" alt="@category.Nome" 
+                         class="category-icon-img" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" />
+                    <i class="@GetCategoryIcon(category.Nome)" style="display: none;"></i>
+                }
+                else
+                {
+                    <i class="@GetCategoryIcon(category.Nome)"></i>
+                }
                 <span>@category.Nome</span>
             </div>
         }
@@ -26,6 +38,16 @@
         <i class="fas fa-chevron-right"></i>
     </button>
 </div>
+
+<style>
+    .category-icon-img {
+        width: 24px;
+        height: 24px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 1px solid var(--rustic-gold);
+    }
+</style>
 
 @code {
     [Parameter] public List<Categoria> Categories { get; set; } = new();
@@ -43,21 +65,30 @@
 
     private async Task ScrollLeft()
     {
-        // Scroll logic would be handled via JS interop in production
         canScrollLeft = false;
         canScrollRight = true;
     }
 
     private async Task ScrollRight()
     {
-        // Scroll logic would be handled via JS interop in production
         canScrollLeft = true;
         canScrollRight = false;
     }
 
+    private string GetFullImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl))
+            return string.Empty;
+
+        if (imageUrl.StartsWith("http://") || imageUrl.StartsWith("https://"))
+            return imageUrl;
+
+        var baseUrl = ApiService.GetBaseUrl();
+        return $"{baseUrl.TrimEnd('/')}{imageUrl}";
+    }
+
     private string GetCategoryIcon(string categoryName)
     {
-        // Map category names to appropriate icons for the historian theme
         var name = categoryName.ToLower();
         
         return name switch

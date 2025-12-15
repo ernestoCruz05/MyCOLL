@@ -13,6 +13,14 @@ namespace MyCOLL.UIComponents.Services
             _httpClient = httpClient;
         }
 
+        /// <summary>
+        /// Retorna o URL base da API
+        /// </summary>
+        public string GetBaseUrl()
+        {
+            return _httpClient.BaseAddress?.ToString() ?? string.Empty;
+        }
+
         #region Categories
 
         public async Task<List<Categoria>> GetCategoriesAsync()
@@ -30,6 +38,15 @@ namespace MyCOLL.UIComponents.Services
 
         #endregion
 
+
+        private void FixImageUrls(Produto p)
+        {
+            if (!string.IsNullOrEmpty(p.ImagemUrl) && !p.ImagemUrl.StartsWith("http"))
+            {
+                var baseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/');
+                p.ImagemUrl = $"{baseUrl}/{p.ImagemUrl.TrimStart('/')}";
+            }
+        }
         #region Products
 
         public async Task<List<Produto>> GetProductsAsync(int? categoryId = null)
@@ -40,7 +57,15 @@ namespace MyCOLL.UIComponents.Services
                 if (categoryId.HasValue && categoryId.Value > 0)
                     url += $"?categoriaId={categoryId.Value}";
 
-                return await _httpClient.GetFromJsonAsync<List<Produto>>(url) ?? new();
+                var products = await _httpClient.GetFromJsonAsync<List<Produto>>(url) ?? new();
+
+                // Fix URLs for all products
+                foreach (var product in products)
+                {
+                    FixImageUrls(product);
+                }
+
+                return products;
             }
             catch (Exception ex)
             {
@@ -53,7 +78,12 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<Produto>($"api/Produtos/{id}");
+                var product = await _httpClient.GetFromJsonAsync<Produto>($"api/Produtos/{id}");
+
+                if (product != null)
+                    FixImageUrls(product);
+
+                return product;
             }
             catch (Exception ex)
             {
@@ -66,13 +96,17 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                var allProducts = await GetProductsAsync();
+                // Since this calls GetProductsAsync internally, it might already be fixed if you updated that method.
+                // But if you filter manually inside this method as shown in your code:
+
+                var allProducts = await GetProductsAsync(); // This now returns fixed URLs
+
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return allProducts;
 
                 return allProducts
                     .Where(p => p.Nome.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                               (p.Descricao?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
+                                (p.Descricao?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
                     .ToList();
             }
             catch (Exception ex)
