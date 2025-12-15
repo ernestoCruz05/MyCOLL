@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyCOLL.Entities
 {
@@ -12,7 +13,12 @@ namespace MyCOLL.Entities
         [StringLength(255)]
         public string? Descricao { get; set; }
 
+<<<<<<< Updated upstream
         [StringLength(300)]
+=======
+        // Changed from Base64 to file path
+        [StringLength(500)]
+>>>>>>> Stashed changes
         public string? ImagemUrl { get; set; }
 
         public bool Ativa { get; set; } = true;
@@ -22,5 +28,8 @@ namespace MyCOLL.Entities
 
         public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
 
+        // Keep backward compatibility - returns ImagemUrl or null
+        [NotMapped]
+        public string? ImagemDataUrl => ImagemUrl;
     }
 }

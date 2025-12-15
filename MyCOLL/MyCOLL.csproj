@@ -19,4 +19,9 @@
 	<ItemGroup>
 		<ProjectReference Include="..\MyCOLL.Razor\MyCOLL.UIComponents.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="wwwroot\uploads\categorias\" />
+	  <Folder Include="wwwroot\uploads\produtos\" />
+	</ItemGroup>
 </Project>

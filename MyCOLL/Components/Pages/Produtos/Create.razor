@@ -1,10 +1,12 @@
 @page "/produtos/criar"
+@rendermode InteractiveServer
 @using MyCOLL.Entities
 @using MyCOLL.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject ProdutoService ProdutoService
 @inject CategoriaService CategoriaService
 @inject ModoEntregaService ModoEntregaService
+@inject ImageUploadService ImageService
 @inject NavigationManager Nav
 @inject IWebHostEnvironment Env
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
@@ -29,6 +31,8 @@
                     <div class="col-md-4">
                          <label class="form-label fw-semibold">Stock Inicial</label>
                          <InputNumber @bind-Value="produto.Stock" class="form-control" />
+                        <label class="form-label fw-semibold">Stock Inicial</label>
+                        <InputNumber @bind-Value="produto.Stock" class="form-control" />
                     </div>
                 </div>
 
@@ -75,6 +79,31 @@
                 <div class="mb-4">
                     <label class="form-label fw-semibold">Imagem</label>
                     <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png,.webp" />
+                    <InputFile OnChange="HandleImageUpload" class="form-control" accept="image/*" />
+                    <small class="text-muted">Formatos: JPG, PNG, WebP (m�x. 2MB)</small>
+
+                    @if (isUploading)
+                    {
+                        <div class="mt-2">
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            A processar imagem...
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(uploadedImageUrl))
+                    {
+                        <div class="mt-2">
+                            <img src="@uploadedImageUrl" class="img-thumbnail" style="max-height: 150px;" />
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="RemoveImage">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-2 py-2">@errorMessage</div>
+                    }
                 </div>
 
                 <div class="mb-4 form-check form-switch">
@@ -85,6 +114,8 @@
                 <div class="d-flex justify-content-end gap-2 border-top pt-3">
                     <a href="/produtos" class="btn btn-light border">Cancelar</a>
                     <button type="submit" class="btn btn-primary px-4">Criar Produto</button>
+                    <button type="button" class="btn btn-light border" @onclick="Cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4" disabled="@isUploading">Criar Produto</button>
                 </div>
             </EditForm>
         </div>
@@ -95,6 +126,10 @@
     private Produto produto = new();
     private List<Categoria> categorias = new();
     private List<ModoEntrega> modos = new();
+    private string? uploadedImageUrl;
+    private string? errorMessage;
+    private bool isUploading;
+    private const long MaxFileSize = 2 * 1024 * 1024;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,9 +141,16 @@
     }
 
     private async Task UploadImagem(InputFileChangeEventArgs e)
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
         var file = e.File;
         if (file != null)
+        Console.WriteLine("HandleImageUpload: start");
+        errorMessage = null;
+        isUploading = true;
+
+        // Remove previous uploaded image if any
+        if (!string.IsNullOrEmpty(uploadedImageUrl))
         {
             var nome = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
             var path = Path.Combine(Env.WebRootPath, "uploads", "produtos");
@@ -117,13 +159,72 @@
             await using var fs = new FileStream(Path.Combine(path, nome), FileMode.Create);
             await stream.CopyToAsync(fs);
             produto.ImagemUrl = $"/uploads/produtos/{nome}";
+            ImageService.DeleteImage(uploadedImageUrl);
+            uploadedImageUrl = null;
         }
+
+        try
+        {
+            var file = e.File;
+            Console.WriteLine($"File: {file?.Name}, Size: {file?.Size}");
+
+            if (file == null)
+            {
+                errorMessage = "Nenhum ficheiro selecionado.";
+                return;
+            }
+
+            if (!Services.ImageUploadService.IsValidImage(file.ContentType, file.Size, MaxFileSize))
+            {
+                errorMessage = file.Size > MaxFileSize
+                    ? $"Ficheiro demasiado grande ({file.Size / 1024.0 / 1024.0:F2}MB). M�ximo: 2MB"
+                    : $"Formato n�o suportado ({file.ContentType}).";
+                return;
+            }
+
+            await using var stream = file.OpenReadStream(MaxFileSize);
+            Console.WriteLine("Stream opened");
+            uploadedImageUrl = await ImageService.SaveImageAsync(stream, file.Name, "produtos");
+            Console.WriteLine($"Image saved: {uploadedImageUrl}");
+            produto.ImagemUrl = uploadedImageUrl;
+            Console.WriteLine("produto.ImagemUrl set");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+            Console.WriteLine($"Exception: {ex}");
+        }
+        finally
+        {
+            isUploading = false;
+            Console.WriteLine("HandleImageUpload: end");
+        }
+    }
+
+    private void RemoveImage()
+    {
+        if (!string.IsNullOrEmpty(uploadedImageUrl))
+        {
+            ImageService.DeleteImage(uploadedImageUrl);
+        }
+        uploadedImageUrl = null;
+        produto.ImagemUrl = null;
     }
 
     private async Task Guardar()
     {
         if (produto.CategoriaId == 0 || produto.ModoEntregaId == 0) return;
         await ProdutoService.AddAsync(produto);
+        Nav.NavigateTo("/produtos");
+    }
+
+    private void Cancelar()
+    {
+        // Cleanup uploaded image if canceling
+        if (!string.IsNullOrEmpty(uploadedImageUrl))
+        {
+            ImageService.DeleteImage(uploadedImageUrl);
+        }
         Nav.NavigateTo("/produtos");
     }
 }

@@ -9,16 +9,24 @@ using MyCOLL.UIComponents.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ✅ Configure SignalR for file uploads (REQUIRED for InputFile)
+builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
+{
+    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB
+});
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+    });
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 
-
+// Application Services
 builder.Services.AddScoped<CategoriaService>();
 builder.Services.AddScoped<ProdutoService>();
 builder.Services.AddScoped<ModoEntregaService>();
@@ -26,6 +34,7 @@ builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<LogService>();
 builder.Services.AddScoped<EncomendaService>();
+builder.Services.AddScoped<ImageUploadService>(); // ✅ Image upload service
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -74,23 +83,50 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+// ✅ MUST be before custom middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapPost("/logout", async (SignInManager<ApplicationUser> signInManager, HttpContext context) =>
 {
     await signInManager.SignOutAsync();
     context.Response.Redirect("/Account/Login");
 });
 
-
+// ✅ FIXED: Authentication middleware with proper exclusions for SignalR
 app.Use(async (context, next) =>
 {
-    var path = context.Request.Path.Value?.ToLower();
-    if (!path!.StartsWith("/account/login") &&
-        !path.StartsWith("/account/logout") &&
-        !context.User.Identity?.IsAuthenticated == true)
+    var path = context.Request.Path.Value?.ToLower() ?? "";
+
+    // Paths that MUST bypass authentication check
+    var excludedPaths = new[]
+    {
+        "/account/login",
+        "/account/logout",
+        "/account/register",
+        "/_blazor",        // SignalR hub - CRITICAL for Blazor Server & InputFile
+        "/_framework",     // Blazor framework files
+        "/_content",       // Static content from RCLs
+        "/uploads",        // ✅ Image uploads folder
+        "/css",
+        "/js",
+        "/lib",
+        "/favicon",
+        "/.well-known"
+    };
+
+    // Check if path should be excluded
+    bool isExcluded = excludedPaths.Any(p => path.StartsWith(p));
+
+    // Fixed boolean logic
+    bool isAuthenticated = context.User.Identity?.IsAuthenticated ?? false;
+
+    if (!isExcluded && !isAuthenticated)
     {
         context.Response.Redirect("/Account/Login");
         return;
     }
+
     await next();
 });
 
@@ -133,9 +169,7 @@ using (var scope = app.Services.CreateScope())
     }
 
     await SeedEncomendas.SeedAsync(db, userManager);
-
 }
-
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

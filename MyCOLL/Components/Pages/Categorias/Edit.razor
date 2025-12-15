@@ -1,23 +1,100 @@
 ﻿@page "/categorias/edit/{id:int}"
-@inject MyCOLL.Services.CategoriaService CategoriaService
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Forms
+@using MyCOLL.Services
+@inject CategoriaService CategoriaService
+@inject ImageUploadService ImageService
 @inject NavigationManager NavigationManager
 
-<h3>Editar Categoria</h3>
+<PageTitle>Editar Categoria</PageTitle>
 
-@if (categoria == null)
-{
-    <p><em>A carregar...</em></p>
-}
-else
-{
-    <EditForm Model="categoria" OnValidSubmit="Salvar">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Editar Categoria</h4>
+                </div>
+                <div class="card-body">
+                    @if (categoria == null)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border" role="status"></div>
+                            <p class="mt-2">A carregar...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="categoria" OnValidSubmit="Salvar" FormName="editCategoria">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="text-danger" />
 
-        <div class="mb-3">
-            <label class="form-label">Nome</label>
-            <InputText class="form-control" @bind-Value="categoria.Nome" />
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nome *</label>
+                                <InputText class="form-control" @bind-Value="categoria.Nome" placeholder="Nome da categoria" />
+                                <ValidationMessage For="@(() => categoria.Nome)" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Descrição</label>
+                                <InputTextArea class="form-control" @bind-Value="categoria.Descricao" rows="3" placeholder="Descrição opcional" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Imagem</label>
+                                <InputFile class="form-control" OnChange="HandleImageUpload" accept="image/*" />
+                                <small class="text-muted">Formatos aceites: JPG, PNG, GIF (máx. 2MB)</small>
+
+                                @if (isUploading)
+                                {
+                                    <div class="mt-2">
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        A processar imagem...
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(currentImageUrl))
+                                {
+                                    <div class="mt-3 text-center">
+                                        <img src="@currentImageUrl" alt="Imagem da categoria" class="img-thumbnail" style="max-height: 200px;" />
+                                        <br />
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" @onclick="RemoveImage">
+                                            <i class="bi bi-trash"></i> Remover imagem
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                                </div>
+                            }
+
+                            <div class="form-check mb-4">
+                                <InputCheckbox class="form-check-input" @bind-Value="categoria.Ativa" id="ativa" />
+                                <label class="form-check-label" for="ativa">Categoria Ativa</label>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success" disabled="@(isSubmitting || isUploading)">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    <i class="bi bi-check-lg me-1"></i> Guardar
+                                </button>
+                                <button type="button" class="btn btn-secondary" @onclick="Voltar">
+                                    <i class="bi bi-arrow-left me-1"></i> Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
         </div>
+<<<<<<< Updated upstream
 
         <div class="mb-3">
             <label class="form-label">Descrição</label>
@@ -55,24 +132,126 @@ else
         <button type="button" class="btn btn-secondary" @onclick="Voltar">Cancelar</button>
     </EditForm>
 }
+=======
+    </div>
+</div>
+>>>>>>> Stashed changes
 
 @code {
     [Parameter] public int id { get; set; }
+    
     private MyCOLL.Entities.Categoria? categoria;
+    private string? errorMessage;
+    private bool isSubmitting;
+    private bool isUploading;
+    private string? currentImageUrl;
+    private string? originalImageUrl;
+    private const long MaxFileSize = 2 * 1024 * 1024;
 
     protected override async Task OnInitializedAsync()
     {
         categoria = await CategoriaService.GetByIdAsync(id);
+        if (categoria != null)
+        {
+            currentImageUrl = categoria.ImagemUrl;
+            originalImageUrl = categoria.ImagemUrl;
+        }
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        if (categoria == null) return;
+        
+        errorMessage = null;
+        isUploading = true;
+
+        try
+        {
+            var file = e.File;
+            if (file == null)
+            {
+                errorMessage = "Nenhum ficheiro selecionado.";
+                return;
+            }
+
+            if (!ImageUploadService.IsValidImage(file.ContentType, file.Size, MaxFileSize))
+            {
+                errorMessage = file.Size > MaxFileSize
+                    ? $"Ficheiro demasiado grande ({file.Size / 1024.0 / 1024.0:F2}MB). Máximo: 2MB"
+                    : $"Formato não suportado ({file.ContentType}).";
+                return;
+            }
+
+            // Delete old uploaded image (not the original)
+            if (!string.IsNullOrEmpty(currentImageUrl) && currentImageUrl != originalImageUrl)
+            {
+                ImageService.DeleteImage(currentImageUrl);
+            }
+
+            // Upload new image
+            await using var stream = file.OpenReadStream(MaxFileSize);
+            currentImageUrl = await ImageService.SaveImageAsync(stream, file.Name, "categorias");
+            categoria.ImagemUrl = currentImageUrl;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private void RemoveImage()
+    {
+        if (categoria == null) return;
+        
+        // Delete the uploaded image (if it's not the original)
+        if (!string.IsNullOrEmpty(currentImageUrl) && currentImageUrl != originalImageUrl)
+        {
+            ImageService.DeleteImage(currentImageUrl);
+        }
+        
+        currentImageUrl = null;
+        categoria.ImagemUrl = null;
     }
 
     private async Task Salvar()
     {
-        if (categoria != null)
+        if (categoria == null) return;
+        
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
         {
+            // Delete original image if it was changed
+            if (!string.IsNullOrEmpty(originalImageUrl) && originalImageUrl != categoria.ImagemUrl)
+            {
+                ImageService.DeleteImage(originalImageUrl);
+            }
+            
             await CategoriaService.UpdateAsync(categoria);
             NavigationManager.NavigateTo("/categorias");
         }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao guardar: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
-    private void Voltar() => NavigationManager.NavigateTo("/categorias");
+    private void Voltar()
+    {
+        // Cleanup: delete newly uploaded image if canceling
+        if (!string.IsNullOrEmpty(currentImageUrl) && currentImageUrl != originalImageUrl)
+        {
+            ImageService.DeleteImage(currentImageUrl);
+        }
+        NavigationManager.NavigateTo("/categorias");
+    }
 }
