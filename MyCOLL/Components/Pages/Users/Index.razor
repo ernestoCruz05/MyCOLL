@@ -3,9 +3,11 @@
 @using MyCOLL.Data
 @using MyCOLL.Services
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
 @inject UserAdminService UserService
 @inject UserManager<ApplicationUser> UserManager
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
 <PageTitle>Gestão de Utilizadores</PageTitle>
@@ -21,7 +23,6 @@
                         <th>EMAIL / USERNAME</th>
                         <th>PERFIL (ROLES)</th>
                         <th class="text-center">ESTADO</th>
-                        <!-- CORREÇÃO: Centrado e largura fixa para garantir que o título aparece -->
                         <th class="text-center" style="width: 220px;">AÇÕES</th>
                     </tr>
                 </thead>
@@ -55,10 +56,8 @@
                                         <span class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
                                     }
                                 </td>
-                                <!-- CORREÇÃO: Botões Centrados e Estilo Clean -->
                                 <td class="text-center">
-                                    <!-- Botão de Roles (placeholder visual se quiseres adicionar lógica futura) -->
-                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Gerir Roles">
+                                    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => AbrirModalRoles(item.User, item.Roles)" title="Gerir Roles">
                                         Roles
                                     </button>
 
@@ -87,11 +86,58 @@
     </div>
 </div>
 
+<!-- Modal de Gestão de Roles -->
+@if (showRolesModal && selectedUser != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gerir Roles - @selectedUser.Email</h5>
+                    <button type="button" class="btn-close" @onclick="FecharModalRoles"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Selecione as roles para este utilizador:</p>
+                    @foreach (var role in availableRoles)
+                    {
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="role_@role"
+                                   checked="@selectedUserRoles.Contains(role)"
+                                   @onchange="@(e => ToggleRole(role, (bool)e.Value!))"
+                                   disabled="@(role == "Admin" && !isCurrentUserAdmin)" />
+                            <label class="form-check-label" for="role_@role">
+                                @role
+                                @if (role == "Admin" && !isCurrentUserAdmin)
+                                {
+                                    <small class="text-muted">(Apenas Admin pode alterar)</small>
+                                }
+                            </label>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalRoles">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarRoles">Guardar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<(ApplicationUser User, IList<string> Roles)>? users;
+    private bool showRolesModal = false;
+    private ApplicationUser? selectedUser;
+    private HashSet<string> selectedUserRoles = new();
+    private string[] availableRoles = { "Admin", "Gestor", "Cliente", "Fornecedor" };
+    private bool isCurrentUserAdmin = false;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isCurrentUserAdmin = user.IsInRole("Admin");
+        
         await Carregar();
     }
 
@@ -115,5 +161,56 @@
             }
             await Carregar();
         }
+    }
+
+    private void AbrirModalRoles(ApplicationUser user, IList<string> currentRoles)
+    {
+        selectedUser = user;
+        selectedUserRoles = new HashSet<string>(currentRoles);
+        showRolesModal = true;
+    }
+
+    private void FecharModalRoles()
+    {
+        showRolesModal = false;
+        selectedUser = null;
+        selectedUserRoles.Clear();
+    }
+
+    private void ToggleRole(string role, bool isChecked)
+    {
+        if (isChecked)
+            selectedUserRoles.Add(role);
+        else
+            selectedUserRoles.Remove(role);
+    }
+
+    private async Task GuardarRoles()
+    {
+        if (selectedUser == null) return;
+
+        var user = await UserManager.FindByIdAsync(selectedUser.Id);
+        if (user == null) return;
+
+        var currentRoles = await UserManager.GetRolesAsync(user);
+
+        var rolesToRemove = currentRoles.Except(selectedUserRoles).ToList();
+        if (rolesToRemove.Any())
+        {
+            await UserManager.RemoveFromRolesAsync(user, rolesToRemove);
+        }
+
+        var rolesToAdd = selectedUserRoles.Except(currentRoles).ToList();
+        if (rolesToAdd.Any())
+        {
+            foreach (var role in rolesToAdd)
+            {
+                await UserService.EnsureRoleAsync(role);
+            }
+            await UserManager.AddToRolesAsync(user, rolesToAdd);
+        }
+
+        FecharModalRoles();
+        await Carregar();
     }
 }
