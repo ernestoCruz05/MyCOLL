@@ -69,5 +69,39 @@ namespace MyCOLL.API.Repositories.Implementations
                 .Skip(skip)
                 .FirstOrDefaultAsync();
         }
+
+        // Novos métodos CRUD
+        public async Task<IEnumerable<Produto>> GetByFornecedorIdAsync(string fornecedorId)
+        {
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .Where(p => p.FornecedorId == fornecedorId)
+                .OrderByDescending(p => p.DataCriacao)
+                .ToListAsync();
+        }
+
+        public async Task<Produto> CreateAsync(Produto produto)
+        {
+            _context.Produtos.Add(produto);
+            await _context.SaveChangesAsync();
+            return produto;
+        }
+
+        public async Task UpdateAsync(Produto produto)
+        {
+            _context.Produtos.Update(produto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var produto = await _context.Produtos.FindAsync(id);
+            if (produto != null)
+            {
+                _context.Produtos.Remove(produto);
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }
