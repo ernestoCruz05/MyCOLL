@@ -1,33 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>MyCOLL - Historian Collection</title>
+    <title>MyCOLL - Coleção de Relíquias</title>
     <base href="/" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+
+    <!-- Google Fonts - Modern + Classic combination -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="MyCOLL.Frontend.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <!-- Rustic Theme CSS from RCL -->
-    <link href="_content/MyCOLL.UIComponents/css/rustic.css" rel="stylesheet" />
 </head>
 
 <body>
-
     <div class="status-bar-safe-area"></div>
 
-    <div id="app">Loading...</div>
+    <div id="app">
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #FFF8D4;">
+            <div style="text-align: center; color: #313647;">
+                <i class="fas fa-gem" style="font-size: 2.5rem; color: #A3B087; margin-bottom: 1rem;"></i>
+                <p style="font-family: 'Playfair Display', serif; font-size: 1.2rem;">A carregar...</p>
+            </div>
+        </div>
+    </div>
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
+        Ocorreu um erro.
+        <a href="" class="reload">Recarregar</a>
         <a class="dismiss">🗙</a>
     </div>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
-
 </body>
-
 </html>

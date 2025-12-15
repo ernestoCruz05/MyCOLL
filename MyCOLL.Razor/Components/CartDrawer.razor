@@ -35,14 +35,14 @@
                         <div class="cart-item">
                             <!-- Item Image -->
                             <div class="item-image">
-                                @if (!string.IsNullOrEmpty(item.Product.ImagemUrl))
+                                @if (!string.IsNullOrEmpty(item.Product.ImagemDataUrl))
                                 {
-                                    <img src="@item.Product.ImagemUrl" alt="@item.Product.Nome" />
+                                    <img src="@item.Product.ImagemDataUrl" alt="@item.Product.Nome" />
                                 }
                                 else
                                 {
                                     <div class="image-placeholder">
-                                        <span>@item.Product.Nome[0]</span>
+                                        <span>@GetInitial(item.Product.Nome)</span>
                                     </div>
                                 }
                             </div>
@@ -166,6 +166,12 @@
     private async Task Checkout()
     {
         await OnCheckout.InvokeAsync();
+    }
+
+    private string GetInitial(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        return name[0].ToString().ToUpper();
     }
 
     private string TruncateText(string text, int maxLength)

@@ -20,15 +20,15 @@
                 <div class="modal-content-grid">
                     <!-- Product Image -->
                     <div class="modal-image-section">
-                        @if (!string.IsNullOrEmpty(Product.ImagemUrl))
+                        @if (!string.IsNullOrEmpty(Product.ImagemDataUrl))
                         {
-                            <img src="@Product.ImagemUrl" alt="@Product.Nome" class="modal-image" />
+                            <img src="@Product.ImagemDataUrl" alt="@Product.Nome" class="modal-image" />
                         }
                         else
                         {
                             <div class="modal-image-placeholder">
                                 <i class="fas fa-archive"></i>
-                                <span>@Product.Nome[0]</span>
+                                <span>@GetInitial(Product.Nome)</span>
                             </div>
                         }
                         
@@ -167,6 +167,12 @@
     private async Task Close()
     {
         await OnClose.InvokeAsync();
+    }
+
+    private string GetInitial(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        return name[0].ToString().ToUpper();
     }
 
     private string GetStockClass()

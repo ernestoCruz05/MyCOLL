@@ -6,80 +6,131 @@
 @inject CartService CartService
 @inject UserService UserService
 
-<div class="rustic-theme">
+<div class="app-container">
     <!-- Navbar -->
-    <RusticNavbar 
-        OnCartToggle="ToggleCart" 
-        OnLoginRequest="ShowLoginModal" 
-        OnSearch="HandleSearch"
-        OnHomeClick="ResetView" />
+    <RusticNavbar OnCartToggle="ToggleCart"
+                  OnLoginRequest="ShowLoginModal"
+                  OnSearch="HandleSearch"
+                  OnHomeClick="ResetView" />
 
-    <!-- Category Slider -->
-    @if (categories != null && categories.Any())
-    {
-        <CategorySlider 
-            Categories="categories" 
-            SelectedCategoryId="selectedCategoryId" 
-            OnCategorySelected="FilterByCategory" />
-    }
+    <!-- Category Slider with Image Support -->
+    <div class="category-slider-wrapper">
+        <div class="category-slider-container">
+            <button class="slider-arrow" disabled="@(!canScrollLeft)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <!-- Update the category chip section (around lines 30-55) to use ImagemDataUrl -->
 
-    <!-- Hero Banner (shown on home view) -->
-    @if (string.IsNullOrEmpty(searchTerm) && selectedCategoryId == null)
-    {
-        <div class="hero-banner">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    <i class="fas fa-scroll"></i> Discover Rare Artifacts
-                </h1>
-                <p class="hero-subtitle">
-                    Explore our curated collection of historical treasures, 
-                    vintage memorabilia, and unique collectibles from around the world.
-                </p>
+            <div class="category-slider">
+                <!-- "Todas" Category -->
+                <div class="category-chip @(selectedCategoryId == null ? "active" : "")"
+                     @onclick="() => FilterByCategory(null)">
+                    <div class="category-image">
+                        <span class="placeholder-text">ALL</span>
+                    </div>
+                    <span class="category-name">Todas</span>
+                </div>
+
+                @if (categories != null)
+                {
+                    @foreach (var category in categories)
+                    {
+                        <div class="category-chip @(selectedCategoryId == category.Id ? "active" : "")"
+                             @onclick="() => FilterByCategory(category.Id)">
+                            <div class="category-image">
+                                @if (!string.IsNullOrEmpty(category.ImagemDataUrl))
+                                {
+                                    <img src="@category.ImagemDataUrl" alt="@category.Nome" />
+                                }
+                                else
+                                {
+                                    <span class="placeholder-text">@GetCategoryInitials(category.Nome)</span>
+                                }
+                            </div>
+                            <span class="category-name">@category.Nome</span>
+                        </div>
+                    }
+                }
             </div>
+
+            <button class="slider-arrow" disabled="@(!canScrollRight)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
-    }
+
+        <!-- Subcategories -->
+        @if (selectedCategoryId != null && subcategories.Any())
+        {
+            <div class="subcategory-slider-container">
+                <button class="slider-arrow small" disabled="@(!canScrollSubLeft)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <div class="subcategory-slider">
+                    <button class="subcategory-chip @(selectedSubcategoryId == null ? "active" : "")"
+                            @onclick="() => FilterBySubcategory(null)">
+                        Todas
+                    </button>
+
+                    @foreach (var sub in subcategories)
+                    {
+                        <button class="subcategory-chip @(selectedSubcategoryId == sub.Id ? "active" : "")"
+                                @onclick="() => FilterBySubcategory(sub.Id)">
+                            @sub.Nome
+                        </button>
+                    }
+                </div>
+
+                <button class="slider-arrow small" disabled="@(!canScrollSubRight)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        }
+    </div>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Section Header -->
         <div class="section-header">
             <h2 class="section-title">
                 @if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    <i class="fas fa-search"></i>
-                    <span>Search Results: "@searchTerm"</span>
+                    <span>Resultados para "@searchTerm"</span>
                 }
                 else if (selectedCategoryId != null)
                 {
-                    <i class="fas fa-tag"></i>
+                    @* Only show category name, no description *@
                     <span>@GetSelectedCategoryName()</span>
                 }
                 else
                 {
-                    <i class="fas fa-gem"></i>
-                    <span>Featured Collection</span>
+                    <span>Todos os Produtos</span>
                 }
             </h2>
             @if (products != null)
             {
-                <span class="product-count">@products.Count artifact(s) found</span>
+                <span class="product-count">@products.Count produto(s)</span>
             }
         </div>
 
-        <!-- Product Grid -->
-        @if (isLoading)
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="empty-state" style="color: var(--danger);">
+                <h4>Erro ao carregar</h4>
+                <p>@errorMessage</p>
+            </div>
+        }
+        else if (isLoading)
         {
             <div class="loading-container">
                 <div class="loading-spinner"></div>
-                <p class="loading-text">Discovering artifacts...</p>
+                <p class="loading-text">A carregar produtos...</p>
             </div>
         }
         else if (products == null || !products.Any())
         {
             <div class="empty-state">
-                <i class="fas fa-box-open"></i>
-                <h4>No artifacts found</h4>
-                <p>Try adjusting your search or browse different categories</p>
+                <h4>Nenhum produto encontrado</h4>
+                <p>Tente selecionar outra categoria ou ajuste a sua pesquisa</p>
             </div>
         }
         else
@@ -87,56 +138,54 @@
             <div class="product-grid">
                 @foreach (var item in products)
                 {
-                    <ProductCard 
-                        Product="item" 
-                        OnInspect="InspectProduct" 
-                        OnAddToCart="HandleAddToCart" />
+                    <ProductCard Product="item"
+                                 OnInspect="InspectProduct"
+                                 OnAddToCart="HandleAddToCart" />
                 }
             </div>
         }
     </div>
 
-    <!-- Decorative Border -->
     <div class="decorative-border"></div>
 </div>
 
-<!-- Cart Drawer -->
-<CartDrawer 
-    IsOpen="isCartOpen" 
-    OnClose="CloseCart" 
-    OnCheckout="HandleCheckout" />
+<CartDrawer IsOpen="isCartOpen"
+            OnClose="CloseCart"
+            OnCheckout="HandleCheckout" />
 
-<!-- Product Detail Modal -->
-<ProductDetailModal 
-    Product="selectedProduct" 
-    CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
-    IsVisible="isModalOpen" 
-    OnClose="CloseModal" 
-    OnAddToCart="HandleModalAddToCart" />
+<ProductDetailModal Product="selectedProduct"
+                    CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
+                    IsVisible="isModalOpen"
+                    OnClose="CloseModal"
+                    OnAddToCart="HandleModalAddToCart" />
 
-<!-- Toast Notification -->
 @if (showToast)
 {
     <div class="toast-notification">
-        <i class="fas fa-check-circle"></i>
         <span>@toastMessage</span>
     </div>
 }
 
 @code {
-    // Data
     private List<Produto>? products;
+    private List<Produto>? allProducts;
     private List<Categoria>? categories;
-    
-    // State
+    private List<Subcategoria> subcategories = new();
+
     private bool isLoading = true;
     private bool isCartOpen = false;
     private bool isModalOpen = false;
     private Produto? selectedProduct;
     private int? selectedCategoryId = null;
+    private int? selectedSubcategoryId = null;
     private string searchTerm = string.Empty;
-    
-    // Toast
+    private string? errorMessage;
+
+    private bool canScrollLeft = false;
+    private bool canScrollRight = true;
+    private bool canScrollSubLeft = false;
+    private bool canScrollSubRight = true;
+
     private bool showToast = false;
     private string toastMessage = string.Empty;
 
@@ -148,23 +197,28 @@
     private async Task LoadInitialData()
     {
         isLoading = true;
+        errorMessage = null;
         StateHasChanged();
 
         try
         {
-            // Load categories and products in parallel
             var categoriesTask = ApiService.GetCategoriesAsync();
             var productsTask = ApiService.GetProductsAsync();
 
             await Task.WhenAll(categoriesTask, productsTask);
 
             categories = await categoriesTask;
-            products = await productsTask;
+            allProducts = await productsTask;
+            products = allProducts;
+
+            Console.WriteLine($"Loaded {categories?.Count ?? 0} categories, {products?.Count ?? 0} products");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading data: {ex.Message}");
+            errorMessage = "Não foi possível conectar ao servidor.";
+            Console.WriteLine($"Error: {ex.Message}");
             products = new List<Produto>();
+            allProducts = new List<Produto>();
             categories = new List<Categoria>();
         }
         finally
@@ -177,17 +231,81 @@
     private async Task FilterByCategory(int? categoryId)
     {
         selectedCategoryId = categoryId;
+        selectedSubcategoryId = null;
         searchTerm = string.Empty;
+
+        if (categoryId.HasValue)
+        {
+            subcategories = GetMockSubcategories(categoryId.Value);
+        }
+        else
+        {
+            subcategories = new List<Subcategoria>();
+        }
+
+        await FilterProducts();
+    }
+
+    private async Task FilterBySubcategory(int? subcategoryId)
+    {
+        selectedSubcategoryId = subcategoryId;
+        await FilterProducts();
+    }
+
+    private List<Subcategoria> GetMockSubcategories(int categoryId)
+    {
+        var categoryName = categories?.FirstOrDefault(c => c.Id == categoryId)?.Nome?.ToLower() ?? "";
+
+        return categoryName switch
+        {
+            "moedas" => new List<Subcategoria>
+            {
+                new() { Id = 1, CategoriaId = categoryId, Nome = "Ouro" },
+                new() { Id = 2, CategoriaId = categoryId, Nome = "Prata" },
+                new() { Id = 3, CategoriaId = categoryId, Nome = "Bronze" },
+                new() { Id = 4, CategoriaId = categoryId, Nome = "Comemorativas" }
+            },
+            "selos" => new List<Subcategoria>
+            {
+                new() { Id = 5, CategoriaId = categoryId, Nome = "Portugueses" },
+                new() { Id = 6, CategoriaId = categoryId, Nome = "Europeus" },
+                new() { Id = 7, CategoriaId = categoryId, Nome = "Mundiais" }
+            },
+            "antiguidades" => new List<Subcategoria>
+            {
+                new() { Id = 8, CategoriaId = categoryId, Nome = "Século XVIII" },
+                new() { Id = 9, CategoriaId = categoryId, Nome = "Século XIX" },
+                new() { Id = 10, CategoriaId = categoryId, Nome = "Século XX" }
+            },
+            "arte" => new List<Subcategoria>
+            {
+                new() { Id = 11, CategoriaId = categoryId, Nome = "Pinturas" },
+                new() { Id = 12, CategoriaId = categoryId, Nome = "Esculturas" },
+                new() { Id = 13, CategoriaId = categoryId, Nome = "Gravuras" }
+            },
+            _ => new List<Subcategoria>()
+        };
+    }
+
+    private async Task FilterProducts()
+    {
         isLoading = true;
         StateHasChanged();
 
         try
         {
-            products = await ApiService.GetProductsAsync(categoryId);
+            if (selectedCategoryId == null)
+            {
+                products = allProducts;
+            }
+            else
+            {
+                products = await ApiService.GetProductsAsync(selectedCategoryId);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error filtering: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
             products = new List<Produto>();
         }
         finally
@@ -201,7 +319,9 @@
     {
         searchTerm = term;
         selectedCategoryId = null;
-        
+        selectedSubcategoryId = null;
+        subcategories = new List<Subcategoria>();
+
         if (string.IsNullOrWhiteSpace(term))
         {
             await LoadInitialData();
@@ -217,7 +337,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error searching: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
             products = new List<Produto>();
         }
         finally
@@ -231,7 +351,27 @@
     {
         searchTerm = string.Empty;
         selectedCategoryId = null;
+        selectedSubcategoryId = null;
+        subcategories = new List<Subcategoria>();
         await LoadInitialData();
+    }
+
+    /// <summary>
+    /// Gets the first 2 letters of the category name as initials
+    /// </summary>
+    private string GetCategoryInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        return name.Length >= 2 ? name[..2].ToUpper() : name.ToUpper();
+    }
+
+    /// <summary>
+    /// Handles image load errors by hiding the broken image
+    /// </summary>
+    private void HandleImageError(Microsoft.AspNetCore.Components.Web.ErrorEventArgs e)
+    {
+        // The image failed to load - the placeholder will show instead via CSS
+        Console.WriteLine("Category image failed to load");
     }
 
     private void InspectProduct(Produto product)
@@ -250,12 +390,15 @@
 
     private void HandleAddToCart(Produto product)
     {
-        ShowToast($"Added '{product.Nome}' to cart");
+        CartService.AddItem(product);
+        ShowToast($"'{product.Nome}' adicionado ao carrinho");
     }
 
     private void HandleModalAddToCart((Produto product, int quantity) args)
     {
-        ShowToast($"Added {args.quantity}x '{args.product.Nome}' to cart");
+        CartService.AddItem(args.product, args.quantity);
+        ShowToast($"{args.quantity}x '{args.product.Nome}' adicionado");
+        CloseModal();
     }
 
     private void ToggleCart()
@@ -275,27 +418,29 @@
         if (!UserService.IsLoggedIn)
         {
             ShowLoginModal();
-            ShowToast("Please login to checkout");
+            ShowToast("Por favor, faça login para continuar");
             return;
         }
-
-        // Navigate to checkout or show checkout modal
-        ShowToast("Proceeding to checkout...");
+        ShowToast("A processar checkout...");
         CloseCart();
     }
 
     private void ShowLoginModal()
     {
-        // This would trigger a login modal
-        ShowToast("Login functionality coming soon!");
+        ShowToast("Funcionalidade de login em breve");
     }
 
     private string GetSelectedCategoryName()
     {
-        if (selectedCategoryId == null || categories == null) 
-            return "All Collections";
-        
-        return categories.FirstOrDefault(c => c.Id == selectedCategoryId)?.Nome ?? "Category";
+        if (selectedCategoryId == null || categories == null)
+            return "Todas";
+        return categories.FirstOrDefault(c => c.Id == selectedCategoryId)?.Nome ?? "Categoria";
+    }
+
+    private string GetSelectedSubcategoryName()
+    {
+        if (selectedSubcategoryId == null) return "";
+        return subcategories.FirstOrDefault(s => s.Id == selectedSubcategoryId)?.Nome ?? "";
     }
 
     private string? GetCategoryName(int? categoryId)
@@ -309,7 +454,6 @@
         toastMessage = message;
         showToast = true;
         StateHasChanged();
-
         await Task.Delay(3000);
         showToast = false;
         StateHasChanged();

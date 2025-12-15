@@ -1,12 +1,12 @@
-﻿@using MyCOLL.UIComponents.Models
+﻿    @using MyCOLL.UIComponents.Models
 @using MyCOLL.UIComponents.Services
 
 <div class="product-card @(IsInCart ? "in-cart" : "")">
     <!-- Product Image Area -->
     <div class="product-image">
-        @if (!string.IsNullOrEmpty(Product.ImagemUrl))
+        @if (!string.IsNullOrEmpty(Product.ImagemDataUrl))
         {
-            <img src="@Product.ImagemUrl" alt="@Product.Nome" />
+            <img src="@Product.ImagemDataUrl" alt="@Product.Nome" />
         }
         else
         {
