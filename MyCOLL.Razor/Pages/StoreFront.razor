@@ -1,0 +1,61 @@
+﻿@page "/store"
+@using MyCOLL.UIComponents.Services
+@using MyCOLL.UIComponents.Models
+@inject CollectionApiService ApiService
+
+<div class="rustic-body" style="min-height: 100vh;">
+    <div class="rustic-navbar">
+        <h3>MyCOLL Historian</h3>
+        <div>
+            <input type="text" placeholder="Search..." style="padding: 5px; border-radius: 4px;" />
+            <button class="btn btn-outline-warning">Cart</button>
+        </div>
+    </div>
+
+    @if (categories != null)
+    {
+        <div class="category-slider">
+            <div class="category-chip" @onclick="() => Filter(null)">All</div>
+            @foreach (var cat in categories)
+            {
+                <div class="category-chip" @onclick="() => Filter(cat.Id)">@cat.Nome</div>
+            }
+        </div>
+    }
+
+    <div class="container mt-4">
+        <div class="row">
+            @if (products != null)
+            {
+                @foreach (var p in products)
+                {
+                    <div class="col-md-4 col-sm-6 mb-4">
+                        <div class="card" style="border: 1px solid var(--rustic-dark);">
+                            <div class="card-body">
+                                <h5 class="card-title">@p.Nome</h5>
+                                <p>@p.Preco.ToString("C")</p>
+                                <button class="btn btn-dark w-100">Inspect</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    List<Categoria>? categories;
+    List<Produto>? products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await ApiService.GetCategoriesAsync();
+        await Filter(null);
+    }
+
+    async Task Filter(int? catId)
+    {
+        products = await ApiService.GetProductsAsync(catId);
+    }
+}

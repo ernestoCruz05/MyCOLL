@@ -247,6 +247,10 @@ namespace MyCOLL.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("ImagemUrl")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(100)

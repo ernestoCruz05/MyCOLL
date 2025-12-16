@@ -4,17 +4,18 @@ namespace MyCOLL.API.DTOs
 {
     public class EncomendaCreateDto
     {
-        [Required]
-        public string ClienteId { get; set; } = string.Empty;
+        // ClienteId REMOVIDO - será obtido do token JWT por segurança!
 
-        [Required]
+        [Required(ErrorMessage = "Morada de envio é obrigatória")]
+        [StringLength(200, MinimumLength = 5, ErrorMessage = "Morada deve ter entre 5 e 200 caracteres")]
         public string MoradaEnvio { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Modo de entrega é obrigatório")]
         public int ModoEntregaId { get; set; }
 
-        [Required]
-        public List<CarrinhoItemDto> Itens { get; set; } = new List<CarrinhoItemDto>();
+        [Required(ErrorMessage = "A encomenda deve ter itens")]
+        [MinLength(1, ErrorMessage = "A encomenda deve ter pelo menos 1 item")]
+        public List<CarrinhoItemDto> Itens { get; set; } = new();
     }
 
     public class CarrinhoItemDto
@@ -22,7 +23,7 @@ namespace MyCOLL.API.DTOs
         [Required]
         public int ProdutoId { get; set; }
 
-        [Range(1, 100)]
+        [Range(1, 100, ErrorMessage = "Quantidade deve ser entre 1 e 100")]
         public int Quantidade { get; set; }
     }
 }

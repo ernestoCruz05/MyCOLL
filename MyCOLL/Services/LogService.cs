@@ -1,6 +1,6 @@
-﻿using MyCOLL.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using MyCOLL.Data;
 using MyCOLL.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace MyCOLL.Services
 {

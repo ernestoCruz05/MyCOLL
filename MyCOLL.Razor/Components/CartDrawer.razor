@@ -1,0 +1,182 @@
+@using MyCOLL.UIComponents.Services
+
+@if (IsOpen)
+{
+    <div class="cart-backdrop" @onclick="Close"></div>
+    <div class="cart-drawer @(IsOpen ? "open" : "")">
+        <!-- Cart Header -->
+        <div class="cart-header">
+            <h4>
+                <i class="fas fa-shopping-basket"></i> Your Cart
+            </h4>
+            <button class="cart-close" @onclick="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Cart Content -->
+        <div class="cart-content">
+            @if (CartService.ItemCount == 0)
+            {
+                <div class="cart-empty">
+                    <i class="fas fa-box-open"></i>
+                    <h5>Your cart is empty</h5>
+                    <p>Start exploring our collection of rare artifacts</p>
+                    <button class="btn-browse" @onclick="Close">
+                        <i class="fas fa-compass"></i> Browse Collection
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="cart-items">
+                    @foreach (var item in CartService.Items)
+                    {
+                        <div class="cart-item">
+                            <!-- Item Image -->
+                            <div class="item-image">
+                                @if (!string.IsNullOrEmpty(item.Product.ImagemUrl))
+                                {
+                                    <img src="@item.Product.ImagemUrl" alt="@item.Product.Nome" />
+                                }
+                                else
+                                {
+                                    <div class="image-placeholder">
+                                        <span>@item.Product.Nome[0]</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Item Details -->
+                            <div class="item-details">
+                                <h6 class="item-name">@TruncateText(item.Product.Nome, 25)</h6>
+                                <span class="item-price">€@item.Product.Preco.ToString("N2")</span>
+                                
+                                <!-- Quantity Controls -->
+                                <div class="item-quantity">
+                                    <button class="qty-btn" 
+                                            @onclick="() => UpdateQuantity(item.Product.Id, item.Quantity - 1)"
+                                            disabled="@(item.Quantity <= 1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="qty-value">@item.Quantity</span>
+                                    <button class="qty-btn" 
+                                            @onclick="() => UpdateQuantity(item.Product.Id, item.Quantity + 1)"
+                                            disabled="@(item.Quantity >= item.Product.Stock)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Item Total & Remove -->
+                            <div class="item-actions">
+                                <span class="item-total">€@item.TotalPrice.ToString("N2")</span>
+                                <button class="remove-btn" @onclick="() => RemoveItem(item.Product.Id)" title="Remove">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Cart Footer -->
+        @if (CartService.ItemCount > 0)
+        {
+            <div class="cart-footer">
+                <!-- Summary -->
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal (@CartService.ItemCount items)</span>
+                        <span>€@CartService.TotalPrice.ToString("N2")</span>
+                    </div>
+                    <div class="summary-row shipping">
+                        <span>Shipping</span>
+                        <span>Calculated at checkout</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Estimated Total</span>
+                        <span>€@CartService.TotalPrice.ToString("N2")</span>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="cart-actions">
+                    <button class="btn-clear" @onclick="ClearCart">
+                        <i class="fas fa-trash"></i> Clear Cart
+                    </button>
+                    <button class="btn-checkout" @onclick="Checkout">
+                        <i class="fas fa-credit-card"></i> Checkout
+                    </button>
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="trust-badges">
+                    <div class="badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure</span>
+                    </div>
+                    <div class="badge">
+                        <i class="fas fa-undo"></i>
+                        <span>Returns</span>
+                    </div>
+                    <div class="badge">
+                        <i class="fas fa-certificate"></i>
+                        <span>Authentic</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Inject] public CartService CartService { get; set; } = default!;
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCheckout { get; set; }
+
+    protected override void OnInitialized()
+    {
+        CartService.OnCartChanged += StateHasChanged;
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private void UpdateQuantity(int productId, int newQuantity)
+    {
+        CartService.UpdateQuantity(productId, newQuantity);
+    }
+
+    private void RemoveItem(int productId)
+    {
+        CartService.RemoveItem(productId);
+    }
+
+    private void ClearCart()
+    {
+        CartService.ClearCart();
+    }
+
+    private async Task Checkout()
+    {
+        await OnCheckout.InvokeAsync();
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text ?? string.Empty;
+        return text[..(maxLength - 3)] + "...";
+    }
+
+    public void Dispose()
+    {
+        CartService.OnCartChanged -= StateHasChanged;
+    }
+}

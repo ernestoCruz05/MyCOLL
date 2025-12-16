@@ -1,0 +1,167 @@
+@using MyCOLL.UIComponents.Services
+
+<div class="rustic-navbar">
+    <!-- Brand Logo -->
+    <div class="navbar-brand" @onclick="GoHome">
+        <i class="fas fa-scroll"></i>
+        <span class="brand-text">MyCOLL</span>
+        <span class="brand-subtitle">Historian</span>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="navbar-search">
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" 
+                   class="search-input" 
+                   placeholder="Search artifacts..." 
+                   @bind="searchTerm" 
+                   @bind:event="oninput"
+                   @onkeyup="HandleKeyUp" />
+            @if (!string.IsNullOrEmpty(searchTerm))
+            {
+                <button class="search-clear" @onclick="ClearSearch">
+                    <i class="fas fa-times"></i>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="navbar-actions">
+        <!-- Cart Button -->
+        <button class="nav-btn cart-btn" @onclick="ToggleCart" title="Shopping Cart">
+            <i class="fas fa-shopping-basket"></i>
+            @if (CartService.ItemCount > 0)
+            {
+                <span class="cart-badge">@CartService.ItemCount</span>
+            }
+        </button>
+
+        <!-- User Profile Button -->
+        @if (UserService.IsLoggedIn)
+        {
+            <div class="user-menu">
+                <button class="nav-btn user-btn" @onclick="ToggleUserMenu" title="@UserService.CurrentUser?.Name">
+                    <span class="user-avatar">@UserService.CurrentUser?.Initials</span>
+                </button>
+                @if (showUserMenu)
+                {
+                    <div class="user-dropdown">
+                        <div class="dropdown-header">
+                            <strong>@UserService.CurrentUser?.Name</strong>
+                            <small>@UserService.CurrentUser?.Email</small>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" @onclick="ViewOrders">
+                            <i class="fas fa-receipt"></i> My Orders
+                        </button>
+                        <button class="dropdown-item" @onclick="ViewProfile">
+                            <i class="fas fa-user-cog"></i> Profile
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item logout-item" @onclick="HandleLogout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <button class="nav-btn login-btn" @onclick="ShowLogin" title="Login">
+                <i class="fas fa-user"></i>
+                <span class="login-text">Login</span>
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Click outside handler -->
+@if (showUserMenu)
+{
+    <div class="overlay-backdrop" @onclick="CloseUserMenu"></div>
+}
+
+@code {
+    [Inject] public CartService CartService { get; set; } = default!;
+    [Inject] public UserService UserService { get; set; } = default!;
+
+    [Parameter] public EventCallback OnCartToggle { get; set; }
+    [Parameter] public EventCallback OnLoginRequest { get; set; }
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+    [Parameter] public EventCallback OnHomeClick { get; set; }
+
+    private string searchTerm = string.Empty;
+    private bool showUserMenu = false;
+
+    protected override void OnInitialized()
+    {
+        CartService.OnCartChanged += StateHasChanged;
+        UserService.OnUserChanged += StateHasChanged;
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnSearch.InvokeAsync(searchTerm);
+        }
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        await OnSearch.InvokeAsync(string.Empty);
+    }
+
+    private async Task ToggleCart()
+    {
+        await OnCartToggle.InvokeAsync();
+    }
+
+    private void ToggleUserMenu()
+    {
+        showUserMenu = !showUserMenu;
+    }
+
+    private void CloseUserMenu()
+    {
+        showUserMenu = false;
+    }
+
+    private async Task ShowLogin()
+    {
+        await OnLoginRequest.InvokeAsync();
+    }
+
+    private async Task GoHome()
+    {
+        await OnHomeClick.InvokeAsync();
+    }
+
+    private void HandleLogout()
+    {
+        UserService.Logout();
+        CartService.ClearCart();
+        showUserMenu = false;
+    }
+
+    private void ViewOrders()
+    {
+        showUserMenu = false;
+        // Navigate to orders - implement as needed
+    }
+
+    private void ViewProfile()
+    {
+        showUserMenu = false;
+        // Navigate to profile - implement as needed
+    }
+
+    public void Dispose()
+    {
+        CartService.OnCartChanged -= StateHasChanged;
+        UserService.OnUserChanged -= StateHasChanged;
+    }
+}

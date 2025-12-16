@@ -1,6 +1,4 @@
-﻿using MyCOLL.Services;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace MyCOLL.Entities
 {
@@ -13,6 +11,9 @@ namespace MyCOLL.Entities
 
         [StringLength(255)]
         public string? Descricao { get; set; }
+
+        [StringLength(300)]
+        public string? ImagemUrl { get; set; }
 
         public bool Ativa { get; set; } = true;
 

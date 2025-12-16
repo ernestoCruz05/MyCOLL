@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MyCOLL.API.Data; // Para aceder a ApplicationUser
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using MyCOLL.API.Data; // Para aceder a ApplicationUser
 
 namespace MyCOLL.API.Entities
 {
