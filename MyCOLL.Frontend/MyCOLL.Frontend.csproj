@@ -45,6 +45,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <AndroidResource Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\MyCOLL.Razor\MyCOLL.UIComponents.csproj" />
 	</ItemGroup>
 
