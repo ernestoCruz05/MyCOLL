@@ -39,15 +39,18 @@ namespace MyCOLL.UIComponents.Services
         #endregion
 
 
-        private void FixImageUrls(Produto p)
+
+        #region Products
+
+        private void FixImageUrl(Produto p)
         {
             if (!string.IsNullOrEmpty(p.ImagemUrl) && !p.ImagemUrl.StartsWith("http"))
             {
+                // Prepends the API address (e.g. http://10.0.2.2:5225) to /uploads/...
                 var baseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/');
                 p.ImagemUrl = $"{baseUrl}/{p.ImagemUrl.TrimStart('/')}";
             }
         }
-        #region Products
 
         public async Task<List<Produto>> GetProductsAsync(int? categoryId = null)
         {
@@ -59,17 +62,14 @@ namespace MyCOLL.UIComponents.Services
 
                 var products = await _httpClient.GetFromJsonAsync<List<Produto>>(url) ?? new();
 
-                // Fix URLs for all products
-                foreach (var product in products)
-                {
-                    FixImageUrls(product);
-                }
+                // FIX: Update URLs for all products
+                foreach (var p in products) FixImageUrl(p);
 
                 return products;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching products: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
                 return new List<Produto>();
             }
         }
@@ -79,15 +79,12 @@ namespace MyCOLL.UIComponents.Services
             try
             {
                 var product = await _httpClient.GetFromJsonAsync<Produto>($"api/Produtos/{id}");
-
-                if (product != null)
-                    FixImageUrls(product);
-
+                if (product != null) FixImageUrl(product);
                 return product;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching product {id}: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
                 return null;
             }
         }

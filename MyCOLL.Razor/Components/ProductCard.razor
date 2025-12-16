@@ -5,10 +5,9 @@
 <div class="product-card @(IsInCart ? "in-cart" : "")">
     <!-- Product Image Area -->
     <div class="product-image">
-        <p style="color: red; font-size: 10px;">DEBUG: @Product.ImagemUrl</p>
         @if (!string.IsNullOrEmpty(Product.ImagemUrl))
         {
-            <img src="@GetFullImageUrl(Product.ImagemUrl)" alt="@Product.Nome" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>
+            <img src="@Product.ImagemUrl" alt="@Product.Nome" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>
             <div class="image-placeholder" style="display: none;">
                 <i class="fas fa-archive"></i>
                 <span>@GetInitials(Product.Nome)</span>

@@ -6,12 +6,11 @@ namespace MyCOLL.Frontend
     public static class MauiProgram
     {
         // Configure your Dev Tunnel URL here
-        // Get this from Visual Studio: Tools > Options > Environment > Dev Tunnels
-        // Or run: devtunnel host -p 5225
-        private const string DevTunnelUrl = "https://YOUR-TUNNEL-ID.devtunnels.ms/";
+        // NOTE: I removed the extra space you had after "https://"
+        private const string DevTunnelUrl = "https://tmtt857w-7268.uks1.devtunnels.ms/";
 
-        // Set to true when using Dev Tunnels for external device testing
-        private const bool UseDevTunnel = false;
+        // Set to true to use the Tunnel (works for Android, iOS, and Windows)
+        private const bool UseDevTunnel = true;
 
         public static MauiApp CreateMauiApp()
         {
@@ -23,38 +22,41 @@ namespace MyCOLL.Frontend
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-            // Configure API base URL
+            // 1. Get the correct URL (Tunnel or Localhost)
             string baseUrl = GetApiBaseUrl();
             Console.WriteLine($"🔗 API Base URL: {baseUrl}");
 
-            // Register HttpClient with base address
+            // 2. Register HttpClient with the special headers
             builder.Services.AddScoped(sp =>
             {
-                var handler = new HttpClientHandler
-                {
-                    // Timeout aumentado para debugging
-                    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-                };
+                var handler = new HttpClientHandler();
 
-                var httpClient = new HttpClient(handler)
+                // Allow self-signed certs (useful if you ever switch back to https localhost)
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+
+                var client = new HttpClient(handler)
                 {
                     BaseAddress = new Uri(baseUrl),
-                    Timeout = TimeSpan.FromSeconds(30)
+                    // Increased timeout to handle Tunnel latency
+                    Timeout = TimeSpan.FromSeconds(60)
                 };
 
-                // Log headers para debugging
-                Console.WriteLine($"📡 HttpClient configured for: {httpClient.BaseAddress}");
+                // CRITICAL: This header bypasses the Microsoft "Anti-Phishing" warning page
+                client.DefaultRequestHeaders.Add("X-Tunnel-Skip-AntiPhishing-Page", "true");
 
-                return httpClient;
+                // User-Agent helps some firewalls identify your app
+                client.DefaultRequestHeaders.Add("User-Agent", "MyCOLL-Mobile-App");
+
+                Console.WriteLine($"📡 HttpClient configured for: {client.BaseAddress}");
+                return client;
             });
 
-            // Register API service
+            // 3. Register your Application Services
             builder.Services.AddScoped<CollectionApiService>();
-
-            // Register state management services as singletons for shared state
             builder.Services.AddSingleton<CartService>();
             builder.Services.AddSingleton<UserService>();
 
+            // 4. Register WebView
             builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
@@ -62,49 +64,41 @@ namespace MyCOLL.Frontend
             builder.Logging.AddDebug();
 #endif
 
+            // 5. Windows-Specific Fix for Mixed Content (HTTP images)
 #if WINDOWS
-    Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("BlazorWebView", (handler, view) =>
-    {
-        if (handler.PlatformView.CoreWebView2 != null)
-        {
-             handler.PlatformView.CoreWebView2.Settings.IsWebMessageEnabled = true;
-        }
-    });
+            Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("BlazorWebView", (handler, view) =>
+            {
+                // This allows the WebView to load HTTP images on Windows
+                if (handler.PlatformView.CoreWebView2 != null)
+                {
+                    handler.PlatformView.CoreWebView2.Settings.IsWebMessageEnabled = true;
+                }
+            });
 #endif
-
 
             return builder.Build();
         }
 
         private static string GetApiBaseUrl()
         {
-            // Use Dev Tunnel URL when enabled (for testing on physical devices)
+            // Priority 1: Use Dev Tunnel if enabled
             if (UseDevTunnel)
             {
-                Console.WriteLine("🌐 Using Dev Tunnel");
+                Console.WriteLine("🌐 Using Dev Tunnel configuration");
                 return DevTunnelUrl;
             }
 
-            // Platform-specific localhost URLs for emulator/simulator testing
+            // Priority 2: Use Platform-specific Localhost (Fallback)
             var baseUrl = DeviceInfo.Platform switch
             {
-                // Android Emulator uses 10.0.2.2 to reach host machine's localhost
                 var p when p == DevicePlatform.Android => "http://10.0.2.2:5225/",
-
-                // iOS Simulator can use localhost directly
                 var p when p == DevicePlatform.iOS => "http://localhost:5225/",
-
-                // macOS can use localhost directly
                 var p when p == DevicePlatform.MacCatalyst => "http://localhost:5225/",
-
-                // Windows can use localhost directly
                 var p when p == DevicePlatform.WinUI => "http://localhost:5225/",
-
-                // Default fallback
                 _ => "http://localhost:5225/"
             };
 
-            Console.WriteLine($"📱 Platform: {DeviceInfo.Platform} → {baseUrl}");
+            Console.WriteLine($"📱 Local Platform URL: {baseUrl}");
             return baseUrl;
         }
     }

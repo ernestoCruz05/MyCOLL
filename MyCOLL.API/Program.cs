@@ -8,6 +8,7 @@ using MyCOLL.API.Repositories.Implementations;
 using MyCOLL.API.Repositories.Interfaces;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,15 +135,30 @@ if (app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 
 // Servir ficheiros estáticos (imagens)
-app.UseCors("AllowMauiApp"); // Apply CORS policy first
-app.UseStaticFiles(new StaticFileOptions
+app.UseStaticFiles();
+
+var storeUploadsPath = Path.Combine(builder.Environment.ContentRootPath, "..", "MyCOLL", "wwwroot", "uploads");
+
+if (Directory.Exists(storeUploadsPath))
 {
-    OnPrepareResponse = ctx =>
+    app.UseStaticFiles(new StaticFileOptions
     {
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    }
-});
+        FileProvider = new PhysicalFileProvider(storeUploadsPath),
+        RequestPath = "/uploads",
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        }
+    });
+    Console.WriteLine($"Shared Image Folder Linked: {storeUploadsPath}");
+}
+else
+{
+    Console.WriteLine($"Shared Image Folder NOT Found at: {storeUploadsPath}");
+}
+
+app.UseCors("AllowMauiApp");
 
 app.UseAuthentication();
 app.UseAuthorization();
