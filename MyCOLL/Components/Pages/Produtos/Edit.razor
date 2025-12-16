@@ -1,11 +1,13 @@
 @page "/produtos/editar/{Id:int}"
+@rendermode InteractiveServer
 @using MyCOLL.Entities
 @using MyCOLL.Services
+@using Microsoft.AspNetCore.Components.Forms
 @inject ProdutoService ProdutoService
 @inject CategoriaService CategoriaService
 @inject ModoEntregaService ModoEntregaService
+@inject ImageUploadService ImageService
 @inject NavigationManager Nav
-@inject IWebHostEnvironment Env
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
 <PageTitle>Editar Produto</PageTitle>
@@ -26,9 +28,9 @@
                             <label class="form-label fw-semibold">Nome</label>
                             <InputText @bind-Value="produto.Nome" class="form-control" />
                         </div>
-                         <div class="col-md-4">
-                             <label class="form-label fw-semibold">Stock</label>
-                             <InputNumber @bind-Value="produto.Stock" class="form-control" />
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Stock</label>
+                            <InputNumber @bind-Value="produto.Stock" class="form-control" />
                         </div>
                     </div>
 
@@ -37,7 +39,6 @@
                         <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="3" />
                     </div>
 
-                    <!-- PREÇOS -->
                     <div class="row mb-3 bg-light p-3 rounded mx-0 border">
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-primary">Preço Base (€)</label>
@@ -57,26 +58,49 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Categoria</label>
                             <InputSelect @bind-Value="produto.CategoriaId" class="form-select">
-                                @foreach (var c in categorias) { <option value="@c.Id">@c.Nome</option> }
+                                @foreach (var c in categorias)
+                                {
+                                    <option value="@c.Id">@c.Nome</option>
+                                }
                             </InputSelect>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Modo de Entrega</label>
                             <InputSelect @bind-Value="produto.ModoEntregaId" class="form-select">
-                                @foreach (var m in modos) { <option value="@m.Id">@m.Nome</option> }
+                                @foreach (var m in modos)
+                                {
+                                    <option value="@m.Id">@m.Nome</option>
+                                }
                             </InputSelect>
                         </div>
                     </div>
 
-                    <!-- Imagem -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Imagem</label>
-                        <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png" />
-                        @if (!string.IsNullOrEmpty(produto.ImagemUrl))
+                        <InputFile OnChange="UploadImagem" class="form-control" accept="image/*" />
+                        <small class="text-muted">Formatos: JPG, PNG, WebP (máx. 2MB)</small>
+
+                        @if (isUploading)
                         {
                             <div class="mt-2">
-                                <img src="@produto.ImagemUrl" class="img-thumbnail" style="height: 100px;" />
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                A processar imagem...
                             </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(currentImageUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@currentImageUrl" class="img-thumbnail" style="max-height: 150px;" />
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="RemoveImage">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger mt-2 py-2">@errorMessage</div>
                         }
                     </div>
 
@@ -86,8 +110,8 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 pt-3">
-                        <a href="/produtos" class="btn btn-light border">Cancelar</a>
-                        <button type="submit" class="btn btn-primary px-4">Guardar Alterações</button>
+                        <button type="button" class="btn btn-light border" @onclick="Cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-primary px-4" disabled="@isUploading">Guardar Alterações</button>
                     </div>
                 </EditForm>
             </div>
@@ -100,35 +124,104 @@
     private Produto? produto;
     private List<Categoria> categorias = new();
     private List<ModoEntrega> modos = new();
+    private string? currentImageUrl;
+    private string? originalImageUrl;
+    private string? errorMessage;
+    private bool isUploading;
+    private const long MaxFileSize = 2 * 1024 * 1024;
 
     protected override async Task OnInitializedAsync()
     {
         categorias = await CategoriaService.GetAllAsync();
         modos = await ModoEntregaService.GetAllAsync();
         produto = await ProdutoService.GetByIdAsync(Id);
+
+        if (produto != null)
+        {
+            currentImageUrl = produto.ImagemUrl;
+            originalImageUrl = produto.ImagemUrl;
+        }
     }
 
     private async Task UploadImagem(InputFileChangeEventArgs e)
     {
-        var file = e.File;
-        if (file != null && produto != null)
+        if (produto == null) return;
+
+        errorMessage = null;
+        isUploading = true;
+
+        try
         {
-            var nome = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
-            var path = Path.Combine(Env.WebRootPath, "uploads", "produtos");
-            Directory.CreateDirectory(path);
-            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
-            await using var fs = new FileStream(Path.Combine(path, nome), FileMode.Create);
-            await stream.CopyToAsync(fs);
-            produto.ImagemUrl = $"/uploads/produtos/{nome}";
+            var file = e.File;
+            if (file == null)
+            {
+                errorMessage = "Nenhum ficheiro selecionado.";
+                return;
+            }
+
+            if (!ImageUploadService.IsValidImage(file.ContentType, file.Size, MaxFileSize))
+            {
+                errorMessage = file.Size > MaxFileSize
+                    ? $"Ficheiro demasiado grande ({file.Size / 1024.0 / 1024.0:F2}MB). Máximo: 2MB"
+                    : $"Formato não suportado ({file.ContentType}).";
+                return;
+            }
+
+            // Delete old uploaded image (not the original)
+            if (!string.IsNullOrEmpty(currentImageUrl) && currentImageUrl != originalImageUrl)
+            {
+                ImageService.DeleteImage(currentImageUrl);
+            }
+
+            await using var stream = file.OpenReadStream(MaxFileSize);
+            currentImageUrl = await ImageService.SaveImageAsync(stream, file.Name, "produtos");
+            produto.ImagemUrl = currentImageUrl;
         }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private void RemoveImage()
+    {
+        if (produto == null) return;
+
+        // Delete the uploaded image (if it's not the original)
+        if (!string.IsNullOrEmpty(currentImageUrl) && currentImageUrl != originalImageUrl)
+        {
+            ImageService.DeleteImage(currentImageUrl);
+        }
+
+        currentImageUrl = null;
+        produto.ImagemUrl = null;
     }
 
     private async Task Guardar()
     {
-        if (produto != null)
+        if (produto == null) return;
+
+        // Delete original image if it was changed
+        if (!string.IsNullOrEmpty(originalImageUrl) && originalImageUrl != produto.ImagemUrl)
         {
-            await ProdutoService.UpdateAsync(produto);
-            Nav.NavigateTo("/produtos");
+            ImageService.DeleteImage(originalImageUrl);
         }
+
+        await ProdutoService.UpdateAsync(produto);
+        Nav.NavigateTo("/produtos");
+    }
+
+    private void Cancelar()
+    {
+        // Cleanup: delete newly uploaded image if canceling
+        if (!string.IsNullOrEmpty(currentImageUrl) && currentImageUrl != originalImageUrl)
+        {
+            ImageService.DeleteImage(currentImageUrl);
+        }
+        Nav.NavigateTo("/produtos");
     }
 }

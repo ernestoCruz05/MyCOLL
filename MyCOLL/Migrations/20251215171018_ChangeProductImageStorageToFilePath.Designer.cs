@@ -12,8 +12,8 @@ using MyCOLL.Data;
 namespace MyCOLL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251215170757_addImage")]
-    partial class addImage
+    [Migration("20251215171018_ChangeProductImageStorageToFilePath")]
+    partial class ChangeProductImageStorageToFilePath
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -251,8 +251,8 @@ namespace MyCOLL.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("ImagemUrl")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -431,8 +431,8 @@ namespace MyCOLL.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ImagemUrl")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<decimal>("MargemLucro")
                         .HasColumnType("decimal(18,2)");

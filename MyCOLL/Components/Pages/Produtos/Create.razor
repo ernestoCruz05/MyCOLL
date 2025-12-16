@@ -8,7 +8,6 @@
 @inject ModoEntregaService ModoEntregaService
 @inject ImageUploadService ImageService
 @inject NavigationManager Nav
-@inject IWebHostEnvironment Env
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
 <PageTitle>Novo Produto</PageTitle>
@@ -29,8 +28,6 @@
                         <InputText @bind-Value="produto.Nome" class="form-control" placeholder="Ex: Selo Raro 1950" />
                     </div>
                     <div class="col-md-4">
-                         <label class="form-label fw-semibold">Stock Inicial</label>
-                         <InputNumber @bind-Value="produto.Stock" class="form-control" />
                         <label class="form-label fw-semibold">Stock Inicial</label>
                         <InputNumber @bind-Value="produto.Stock" class="form-control" />
                     </div>
@@ -78,9 +75,8 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-semibold">Imagem</label>
-                    <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png,.webp" />
                     <InputFile OnChange="HandleImageUpload" class="form-control" accept="image/*" />
-                    <small class="text-muted">Formatos: JPG, PNG, WebP (mï¿½x. 2MB)</small>
+                    <small class="text-muted">Formatos: JPG, PNG, WebP (máx. 2MB)</small>
 
                     @if (isUploading)
                     {
@@ -112,8 +108,6 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 border-top pt-3">
-                    <a href="/produtos" class="btn btn-light border">Cancelar</a>
-                    <button type="submit" class="btn btn-primary px-4">Criar Produto</button>
                     <button type="button" class="btn btn-light border" @onclick="Cancelar">Cancelar</button>
                     <button type="submit" class="btn btn-primary px-4" disabled="@isUploading">Criar Produto</button>
                 </div>
@@ -140,11 +134,8 @@
         produto.Ativo = true;
     }
 
-    private async Task UploadImagem(InputFileChangeEventArgs e)
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
-        var file = e.File;
-        if (file != null)
         Console.WriteLine("HandleImageUpload: start");
         errorMessage = null;
         isUploading = true;
@@ -152,13 +143,6 @@
         // Remove previous uploaded image if any
         if (!string.IsNullOrEmpty(uploadedImageUrl))
         {
-            var nome = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
-            var path = Path.Combine(Env.WebRootPath, "uploads", "produtos");
-            Directory.CreateDirectory(path);
-            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
-            await using var fs = new FileStream(Path.Combine(path, nome), FileMode.Create);
-            await stream.CopyToAsync(fs);
-            produto.ImagemUrl = $"/uploads/produtos/{nome}";
             ImageService.DeleteImage(uploadedImageUrl);
             uploadedImageUrl = null;
         }
@@ -177,8 +161,8 @@
             if (!Services.ImageUploadService.IsValidImage(file.ContentType, file.Size, MaxFileSize))
             {
                 errorMessage = file.Size > MaxFileSize
-                    ? $"Ficheiro demasiado grande ({file.Size / 1024.0 / 1024.0:F2}MB). Mï¿½ximo: 2MB"
-                    : $"Formato nï¿½o suportado ({file.ContentType}).";
+                    ? $"Ficheiro demasiado grande ({file.Size / 1024.0 / 1024.0:F2}MB). Máximo: 2MB"
+                    : $"Formato não suportado ({file.ContentType}).";
                 return;
             }
 

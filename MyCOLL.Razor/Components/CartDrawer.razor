@@ -35,9 +35,9 @@
                         <div class="cart-item">
                             <!-- Item Image -->
                             <div class="item-image">
-                                @if (!string.IsNullOrEmpty(item.Product.ImagemDataUrl))
+                                @if (!string.IsNullOrEmpty(item.Product.ImagemUrl))
                                 {
-                                    <img src="@item.Product.ImagemDataUrl" alt="@item.Product.Nome" />
+                                    <img src="@item.Product.ImagemUrl" alt="@item.Product.Nome" />
                                 }
                                 else
                                 {

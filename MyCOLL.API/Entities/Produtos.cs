@@ -33,16 +33,12 @@ namespace MyCOLL.API.Entities
         public int ModoEntregaId { get; set; }
         public ModoEntrega? ModoEntrega { get; set; }
 
-<<<<<<< Updated upstream
         public string? FornecedorId { get; set; }
 
         [ForeignKey("FornecedorId")]
         public ApplicationUser? Fornecedor { get; set; }
 
-        [StringLength(300)]
-=======
         [StringLength(500)]
->>>>>>> Stashed changes
         public string? ImagemUrl { get; set; }
 
         public DateTime DataCriacao { get; set; } = DateTime.Now;

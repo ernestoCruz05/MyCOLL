@@ -86,47 +86,6 @@
             </div>
         </div>
     </div>
-<<<<<<< Updated upstream
-
-    <div class="mb-3">
-        <label class="form-label">Descrição</label>
-        <InputText class="form-control" @bind-Value="categoria.Descricao" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Imagem (URL)</label>
-        <div class="input-group">
-            <InputText class="form-control" @bind-Value="categoria.ImagemUrl" placeholder="https://exemplo.com/imagem.jpg ou /uploads/categorias/..." />
-            @if (!string.IsNullOrEmpty(categoria.ImagemUrl))
-            {
-                <button type="button" class="btn btn-outline-secondary" @onclick="() => categoria.ImagemUrl = null">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            }
-        </div>
-        @if (!string.IsNullOrEmpty(categoria.ImagemUrl))
-        {
-            <div class="mt-2">
-                <img src="@categoria.ImagemUrl" alt="Preview" class="img-thumbnail" style="max-height: 150px;" />
-            </div>
-        }
-        <small class="text-muted">
-            Cole o URL da imagem ou use o endpoint /api/upload/categoria para fazer upload
-        </small>
-    </div>
-
-    <div class="form-check mb-3">
-        <InputCheckbox class="form-check-input" @bind-Value="categoria.Ativa" />
-        <label class="form-check-label">Ativa</label>
-    </div>
-
-    <button type="submit" class="btn btn-success me-2">Guardar</button>
-    <button type="button" class="btn btn-secondary" @onclick="Voltar">Cancelar</button>
-</EditForm>
-
-@code {
-    private MyCOLL.Entities.Categoria categoria = new() { Ativa = true };
-=======
 </div>
 
 @code {
@@ -194,7 +153,6 @@
         uploadedImageUrl = null;
         categoria.ImagemUrl = null;
     }
->>>>>>> Stashed changes
 
     private async Task Salvar()
     {

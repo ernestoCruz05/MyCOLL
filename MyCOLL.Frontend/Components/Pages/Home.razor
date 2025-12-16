@@ -38,9 +38,9 @@
                         <div class="category-chip @(selectedCategoryId == category.Id ? "active" : "")"
                              @onclick="() => FilterByCategory(category.Id)">
                             <div class="category-image">
-                                @if (!string.IsNullOrEmpty(category.ImagemDataUrl))
+                                @if (!string.IsNullOrEmpty(category.ImagemUrl))
                                 {
-                                    <img src="@category.ImagemDataUrl" alt="@category.Nome" />
+                                    <img src="@category.ImagemUrl" alt="@category.Nome" />
                                 }
                                 else
                                 {

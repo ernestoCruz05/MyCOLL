@@ -18,7 +18,14 @@
             {
                 <button class="category-chip @(SelectedCategoryId == category.Id ? "active" : "")"
                         @onclick="() => SelectCategory(category.Id)">
-                    <i class="@GetCategoryIcon(category.Nome)"></i>
+                    @if (!string.IsNullOrEmpty(category.ImagemUrl))
+                    {
+                        <img src="@category.ImagemUrl" alt="@category.Nome" class="category-image" style="width:32px; height:32px; object-fit:cover; border-radius:8px;" />
+                    }
+                    else
+                    {
+                        <i class="@GetCategoryIcon(category.Nome)"></i>
+                    }
                     <span>@category.Nome</span>
                 </button>
             }

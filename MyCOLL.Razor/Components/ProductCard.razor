@@ -4,9 +4,9 @@
 <div class="product-card @(IsInCart ? "in-cart" : "")">
     <!-- Product Image Area -->
     <div class="product-image">
-        @if (!string.IsNullOrEmpty(Product.ImagemDataUrl))
+        @if (!string.IsNullOrEmpty(Product.ImagemUrl))
         {
-            <img src="@Product.ImagemDataUrl" alt="@Product.Nome" />
+            <img src="@Product.ImagemUrl" alt="@Product.Nome" />
         }
         else
         {

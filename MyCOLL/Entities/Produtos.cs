@@ -18,7 +18,7 @@ namespace MyCOLL.Entities
         public decimal PrecoBase { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal MargemLucro { get; set; } // 0 -> 100% 
+        public decimal MargemLucro { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Preco { get; set; }
@@ -38,12 +38,15 @@ namespace MyCOLL.Entities
         [ForeignKey("FornecedorId")]
         public ApplicationUser? Fornecedor { get; set; }
 
-        [StringLength(300)]
+        [StringLength(500)]
         public string? ImagemUrl { get; set; }
 
         public DateTime DataCriacao { get; set; } = DateTime.Now;
         public DateTime? DataAtualizacao { get; set; }
-
         public DateTime DataAdicao { get; set; } = DateTime.Now;
+
+        // Backward compatibility property
+        [NotMapped]
+        public string? ImagemDataUrl => ImagemUrl;
     }
 }

@@ -248,13 +248,9 @@ namespace MyCOLL.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("ImagemUrl")
-<<<<<<< Updated upstream
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-=======
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
->>>>>>> Stashed changes
+
 
                     b.Property<string>("Nome")
                         .IsRequired()

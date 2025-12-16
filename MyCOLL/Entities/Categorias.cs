@@ -13,12 +13,7 @@ namespace MyCOLL.Entities
         [StringLength(255)]
         public string? Descricao { get; set; }
 
-<<<<<<< Updated upstream
-        [StringLength(300)]
-=======
-        // Changed from Base64 to file path
         [StringLength(500)]
->>>>>>> Stashed changes
         public string? ImagemUrl { get; set; }
 
         public bool Ativa { get; set; } = true;

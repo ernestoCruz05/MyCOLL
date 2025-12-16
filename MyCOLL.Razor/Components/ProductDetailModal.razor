@@ -20,9 +20,9 @@
                 <div class="modal-content-grid">
                     <!-- Product Image -->
                     <div class="modal-image-section">
-                        @if (!string.IsNullOrEmpty(Product.ImagemDataUrl))
+                        @if (!string.IsNullOrEmpty(Product.ImagemUrl))
                         {
-                            <img src="@Product.ImagemDataUrl" alt="@Product.Nome" class="modal-image" />
+                            <img src="@Product.ImagemUrl" alt="@Product.Nome" class="modal-image" />
                         }
                         else
                         {
