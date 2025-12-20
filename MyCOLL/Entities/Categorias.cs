@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyCOLL.Entities
 {
@@ -20,7 +21,13 @@ namespace MyCOLL.Entities
         public DateTime DataCriacao { get; set; } = DateTime.Now;
         public DateTime? DataAtualizacao { get; set; }
 
-        public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
+        public int? CategoriaPaiId { get; set; }
 
+        [ForeignKey("CategoriaPaiId")]
+        public Categoria? CategoriaPai { get; set; }
+
+        public ICollection<Categoria> SubCategorias { get; set; } = new List<Categoria>();
+
+        public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
     }
 }

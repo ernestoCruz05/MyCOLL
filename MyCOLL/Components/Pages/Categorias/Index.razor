@@ -1,4 +1,5 @@
 ﻿@page "/categorias"
+@using MyCOLL.Entities
 @inject MyCOLL.Services.CategoriaService CategoriaService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime js
@@ -28,11 +29,11 @@
                 <thead class="table-dark">
                     <tr>
                         <th style="width: 60px;">IMG</th>
-                        <th style="width: 50px;">ID</th>
+                        <th style="width: 50px;">ID</th> 
                         <th>NOME</th>
                         <th>DESCRIÇÃO</th>
                         <th class="text-center">ESTADO</th>
-                        <th class="text-center" style="width: 200px;">AÇÕES</th>
+                        <th class="text-center" style="width: 300px;">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,21 +49,20 @@
                     {
                         @foreach (var c in categorias)
                         {
-                            <tr>
+                            bool temFilhas = c.SubCategorias != null && c.SubCategorias.Any();
+                            bool aberto = IsExpanded(c.Id);
+
+
+                            <tr class="bg-white">
                                 <td>
                                     @if (!string.IsNullOrEmpty(c.ImagemUrl))
                                     {
                                         <img src="@c.ImagemUrl" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" />
                                     }
-                                    else
-                                    {
-                                        <div class="bg-light rounded border d-flex align-items-center justify-content-center text-muted" style="width: 40px; height: 40px;">
-                                            <i class="bi bi-image-alt"></i>
-                                        </div>
-                                    }
+                                   
                                 </td>
-                                <td class="text-muted small">#@c.Id</td>
-                                <td class="fw-semibold">@c.Nome</td>
+                                <td class="text-muted small">#@c.Id</td> 
+                                <td class="fw-bold text-dark">@c.Nome</td>
                                 <td class="text-muted small">@c.Descricao</td>
                                 <td class="text-center">
                                     @if (c.Ativa)
@@ -74,15 +74,79 @@
                                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inativa</span>
                                     }
                                 </td>
+
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => EditCategoria(c.Id)">
-                                        Editar
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCategoria(c.Id)">
-                                        Eliminar
-                                    </button>
+                                    <div class="d-flex justify-content-center gap-1">
+                                        @if (temFilhas)
+                                        {
+                                            <button class="btn btn-sm btn-outline-dark" @onclick="() => Toggle(c.Id)">
+                                                @(aberto ? "Fechar" : "Subcategorias")
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 100px;"></div>
+                                        }
+
+                                        <a href="/categorias/edit/@c.Id" class="btn btn-sm btn-outline-secondary">
+                                            Editar
+                                        </a>
+
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCategoria(c.Id)">
+                                            Eliminar
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
+
+                            @if (aberto && temFilhas)
+                            {
+                                @foreach (var sub in c.SubCategorias!)
+                                {
+                                    <tr style="background-color: #e9ecef;">
+
+                                        <td>
+                                    @if (!string.IsNullOrEmpty(c.ImagemUrl))
+                                    {
+                                        <img src="@c.ImagemUrl" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" />
+                                    }
+                                   
+                                </td>
+                                        <td class="text-muted small">#@sub.Id</td>
+
+                                        <td class="text-secondary fw-semibold ps-4">
+                                            @sub.Nome
+                                        </td>
+
+                                        <td class="text-muted small fst-italic">@sub.Descricao</td>
+
+                                        <td class="text-center">
+                                            @if (sub.Ativa)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">Ativa</span>
+                                            }
+                                            else
+                                            {
+
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inativa</span>
+                                            }
+                                        </td>
+
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center gap-1">
+                                                <div style="width: 100px;"></div> 
+
+                                                <a href="/categorias/edit/@sub.Id" class="btn btn-sm btn-outline-secondary bg-white">
+                                                    Editar
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-danger bg-white" @onclick="() => DeleteCategoria(sub.Id)">
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         }
                     }
                 </tbody>
@@ -92,8 +156,9 @@
 </div>
 
 @code {
-    private List<MyCOLL.Entities.Categoria>? categorias;
+    private List<Categoria>? categorias;
     private string? errorMessage;
+    private HashSet<int> expandedIds = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,18 +167,20 @@
 
     private async Task CarregarDados()
     {
-        categorias = await CategoriaService.GetAllAsync();
+        categorias = await CategoriaService.GetPrincipaisComSubAsync();
     }
 
-    private void EditCategoria(int id)
+    private void Toggle(int id)
     {
-        NavigationManager.NavigateTo($"/categorias/edit/{id}");
+        if (expandedIds.Contains(id)) expandedIds.Remove(id);
+        else expandedIds.Add(id);
     }
+
+    private bool IsExpanded(int id) => expandedIds.Contains(id);
 
     private async Task DeleteCategoria(int id)
     {
         errorMessage = null;
-
         var confirmar = await js.InvokeAsync<bool>("confirm", "Tem a certeza que quer eliminar esta categoria?");
 
         if (confirmar)

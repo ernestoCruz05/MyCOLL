@@ -4,20 +4,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using MyCOLL.Data;
+using MyCOLL.API.Data;
 
 #nullable disable
 
-namespace MyCOLL.Migrations
+namespace MyCOLL.API.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(AppDbContext))]
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.2")
+                .HasAnnotation("ProductVersion", "8.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -155,7 +155,7 @@ namespace MyCOLL.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("MyCOLL.Data.ApplicationUser", b =>
+            modelBuilder.Entity("MyCOLL.API.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -166,12 +166,6 @@ namespace MyCOLL.Migrations
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DataAtualizacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -226,7 +220,7 @@ namespace MyCOLL.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Categoria", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Categoria", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -266,7 +260,7 @@ namespace MyCOLL.Migrations
                     b.ToTable("Categorias");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.DetalheEncomenda", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.DetalheEncomenda", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -278,7 +272,7 @@ namespace MyCOLL.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PrecoUnitario")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<int>("ProdutoId")
                         .HasColumnType("int");
@@ -295,7 +289,7 @@ namespace MyCOLL.Migrations
                     b.ToTable("DetalhesEncomenda");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Encomenda", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Encomenda", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -325,7 +319,7 @@ namespace MyCOLL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Total")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.HasKey("Id");
 
@@ -334,38 +328,7 @@ namespace MyCOLL.Migrations
                     b.ToTable("Encomendas");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.LogEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Acao")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Data")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nome")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Logs");
-                });
-
-            modelBuilder.Entity("MyCOLL.Entities.ModoEntrega", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.ModoEntrega", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -377,17 +340,7 @@ namespace MyCOLL.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal>("CustoBase")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("DataAtualizacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Descricao")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -402,7 +355,7 @@ namespace MyCOLL.Migrations
                     b.ToTable("ModosEntrega");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Produto", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Produto", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -415,9 +368,6 @@ namespace MyCOLL.Migrations
 
                     b.Property<int>("CategoriaId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("DataAdicao")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataAtualizacao")
                         .HasColumnType("datetime2");
@@ -478,7 +428,7 @@ namespace MyCOLL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("MyCOLL.Data.ApplicationUser", null)
+                    b.HasOne("MyCOLL.API.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -487,7 +437,7 @@ namespace MyCOLL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("MyCOLL.Data.ApplicationUser", null)
+                    b.HasOne("MyCOLL.API.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -502,7 +452,7 @@ namespace MyCOLL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MyCOLL.Data.ApplicationUser", null)
+                    b.HasOne("MyCOLL.API.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -511,34 +461,34 @@ namespace MyCOLL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("MyCOLL.Data.ApplicationUser", null)
+                    b.HasOne("MyCOLL.API.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Categoria", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Categoria", b =>
                 {
-                    b.HasOne("MyCOLL.Entities.Categoria", "CategoriaPai")
+                    b.HasOne("MyCOLL.API.Entities.Categoria", "CategoriaPai")
                         .WithMany("SubCategorias")
                         .HasForeignKey("CategoriaPaiId");
 
                     b.Navigation("CategoriaPai");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.DetalheEncomenda", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.DetalheEncomenda", b =>
                 {
-                    b.HasOne("MyCOLL.Entities.Encomenda", "Encomenda")
+                    b.HasOne("MyCOLL.API.Entities.Encomenda", "Encomenda")
                         .WithMany("Itens")
                         .HasForeignKey("EncomendaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MyCOLL.Entities.Produto", "Produto")
+                    b.HasOne("MyCOLL.API.Entities.Produto", "Produto")
                         .WithMany()
                         .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Encomenda");
@@ -546,9 +496,9 @@ namespace MyCOLL.Migrations
                     b.Navigation("Produto");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Encomenda", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Encomenda", b =>
                 {
-                    b.HasOne("MyCOLL.Data.ApplicationUser", "Cliente")
+                    b.HasOne("MyCOLL.API.Data.ApplicationUser", "Cliente")
                         .WithMany()
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -557,20 +507,20 @@ namespace MyCOLL.Migrations
                     b.Navigation("Cliente");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Produto", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Produto", b =>
                 {
-                    b.HasOne("MyCOLL.Entities.Categoria", "Categoria")
+                    b.HasOne("MyCOLL.API.Entities.Categoria", "Categoria")
                         .WithMany("Produtos")
                         .HasForeignKey("CategoriaId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MyCOLL.Data.ApplicationUser", "Fornecedor")
+                    b.HasOne("MyCOLL.API.Data.ApplicationUser", "Fornecedor")
                         .WithMany()
                         .HasForeignKey("FornecedorId");
 
-                    b.HasOne("MyCOLL.Entities.ModoEntrega", "ModoEntrega")
-                        .WithMany("Produtos")
+                    b.HasOne("MyCOLL.API.Entities.ModoEntrega", "ModoEntrega")
+                        .WithMany()
                         .HasForeignKey("ModoEntregaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -582,21 +532,16 @@ namespace MyCOLL.Migrations
                     b.Navigation("ModoEntrega");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Categoria", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Categoria", b =>
                 {
                     b.Navigation("Produtos");
 
                     b.Navigation("SubCategorias");
                 });
 
-            modelBuilder.Entity("MyCOLL.Entities.Encomenda", b =>
+            modelBuilder.Entity("MyCOLL.API.Entities.Encomenda", b =>
                 {
                     b.Navigation("Itens");
-                });
-
-            modelBuilder.Entity("MyCOLL.Entities.ModoEntrega", b =>
-                {
-                    b.Navigation("Produtos");
                 });
 #pragma warning restore 612, 618
         }

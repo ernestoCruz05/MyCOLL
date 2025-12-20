@@ -16,18 +16,37 @@ namespace MyCOLL.Services
         }
 
         public async Task<List<Categoria>> GetAllAsync() =>
-            await _context.Categorias
-                .Include(c => c.Produtos)
+            await _context.Categorias.ToListAsync();
+        public async Task<List<Categoria>> GetPrincipaisComSubAsync()
+        {
+            return await _context.Categorias
+                .Where(c => c.CategoriaPaiId == null) 
+                .Include(c => c.SubCategorias)        
                 .OrderBy(c => c.Nome)
                 .ToListAsync();
+        }
+
+        public async Task<List<Categoria>> GetPossiveisPaisAsync()
+        {
+            return await _context.Categorias
+                .Where(c => c.CategoriaPaiId == null && c.Ativa) 
+                .OrderBy(c => c.Nome)
+                .ToListAsync();
+        }
+        // ------------------------------------------
 
         public async Task<Categoria?> GetByIdAsync(int id) =>
             await _context.Categorias
-                .Include(c => c.Produtos)
+                .Include(c => c.SubCategorias) 
                 .FirstOrDefaultAsync(c => c.Id == id);
 
         public async Task AddAsync(Categoria categoria)
         {
+            if (categoria.CategoriaPaiId.HasValue)
+            {
+                categoria.SubCategorias = new List<Categoria>();
+            }
+
             categoria.DataCriacao = DateTime.Now;
             _context.Categorias.Add(categoria);
             await _context.SaveChangesAsync();
@@ -46,16 +65,18 @@ namespace MyCOLL.Services
         {
             var cat = await _context.Categorias
                 .Include(c => c.Produtos)
+                .Include(c => c.SubCategorias)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (cat != null)
             {
-                // RN02: Não eliminar se tiver produtos
-                if (cat.Produtos != null && cat.Produtos.Any())
-                    throw new InvalidOperationException(
-                        $"Não é possível apagar '{cat.Nome}' porque existem {cat.Produtos.Count} produtos associados.");
+                if (cat.Produtos.Any())
+                    throw new InvalidOperationException($"Não é possível apagar '{cat.Nome}' pois tem produtos.");
 
-                _context.Categorias.Remove(cat); // BUG CORRIGIDO: faltava esta linha!
+                if (cat.SubCategorias.Any())
+                    throw new InvalidOperationException($"Não é possível apagar '{cat.Nome}' pois tem subcategorias.");
+
+                _context.Categorias.Remove(cat);
                 await _context.SaveChangesAsync();
                 await _log.AddAsync("Categoria", "Eliminada", cat.Nome);
             }
