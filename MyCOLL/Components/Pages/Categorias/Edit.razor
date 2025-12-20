@@ -1,78 +1,107 @@
 ﻿@page "/categorias/edit/{id:int}"
-@inject MyCOLL.Services.CategoriaService CategoriaService
-@inject NavigationManager NavigationManager
+@using MyCOLL.Entities
+@using MyCOLL.Services
+@inject CategoriaService CategoriaService
+@inject NavigationManager Nav
+@inject IWebHostEnvironment Env
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Gestor")]
 
-<h3>Editar Categoria</h3>
+<PageTitle>Editar Categoria</PageTitle>
 
-@if (categoria == null)
-{
-    <p><em>A carregar...</em></p>
-}
-else
-{
-    <EditForm Model="categoria" OnValidSubmit="Salvar">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div class="mb-3">
-            <label class="form-label">Nome</label>
-            <InputText class="form-control" @bind-Value="categoria.Nome" />
+<div class="container py-4" style="max-width: 800px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h4 class="mb-0 fw-bold">Editar Categoria</h4>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Descrição</label>
-            <InputText class="form-control" @bind-Value="categoria.Descricao" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Imagem (URL)</label>
-            <div class="input-group">
-                <InputText class="form-control" @bind-Value="categoria.ImagemUrl" placeholder="https://exemplo.com/imagem.jpg ou /uploads/categorias/..." />
-                @if (!string.IsNullOrEmpty(categoria.ImagemUrl))
-                {
-                    <button type="button" class="btn btn-outline-secondary" @onclick="() => categoria.ImagemUrl = null">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                }
-            </div>
-            @if (!string.IsNullOrEmpty(categoria.ImagemUrl))
+        <div class="card-body p-4">
+            @if (categoria == null)
             {
-                <div class="mt-2">
-                    <img src="@categoria.ImagemUrl" alt="Preview" class="img-thumbnail" style="max-height: 150px;" />
-                </div>
+                <div class="alert alert-warning">Carregando dados da categoria...</div>
             }
-            <small class="text-muted">
-                Cole o URL da imagem ou use o endpoint /api/upload/categoria para fazer upload
-            </small>
-        </div>
+            else
+            {
+                <EditForm Model="@categoria" OnValidSubmit="Guardar">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger mb-3" />
 
-        <div class="form-check mb-3">
-            <InputCheckbox class="form-check-input" @bind-Value="categoria.Ativa" />
-            <label class="form-check-label">Ativa</label>
-        </div>
+                    <input type="hidden" value="@categoria.Id" />
 
-        <button type="submit" class="btn btn-primary me-2">Guardar Alterações</button>
-        <button type="button" class="btn btn-secondary" @onclick="Voltar">Cancelar</button>
-    </EditForm>
-}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome da Categoria</label>
+                        <InputText @bind-Value="categoria.Nome" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descrição</label>
+                        <InputTextArea @bind-Value="categoria.Descricao" class="form-control" rows="3" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Imagem</label>
+                        <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png,.webp" />
+
+                        @if (!string.IsNullOrEmpty(categoria.ImagemUrl))
+                        {
+                            <div class="mt-3 p-2 border rounded bg-light text-center">
+                                <img src="@categoria.ImagemUrl" alt="Imagem atual" class="img-fluid rounded" style="max-height: 200px;" />
+                                <div class="mt-1 small text-muted">Imagem atual (se fizer upload, esta será substituída)</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mb-4 form-check form-switch">
+                        <InputCheckbox @bind-Value="categoria.Ativa" class="form-check-input" id="ativa" />
+                        <label class="form-check-label" for="ativa">Categoria Ativa</label>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="/categorias" class="btn btn-light border">Cancelar</a>
+                        <button type="submit" class="btn btn-primary px-4">Guardar Alterações</button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
 
 @code {
-    [Parameter] public int id { get; set; }
-    private MyCOLL.Entities.Categoria? categoria;
+    [Parameter]
+    public int Id { get; set; }
+
+    private Categoria? categoria;
 
     protected override async Task OnInitializedAsync()
     {
-        categoria = await CategoriaService.GetByIdAsync(id);
+        categoria = await CategoriaService.GetByIdAsync(Id);
+
+        if (categoria == null)
+        {
+            Nav.NavigateTo("/categorias");
+        }
     }
 
-    private async Task Salvar()
+    private async Task UploadImagem(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null && categoria != null)
+        {
+            var nome = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
+            var path = Path.Combine(Env.WebRootPath, "uploads", "categorias");
+            Directory.CreateDirectory(path);
+
+            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            await using var fs = new FileStream(Path.Combine(path, nome), FileMode.Create);
+            await stream.CopyToAsync(fs);
+            categoria.ImagemUrl = $"/uploads/categorias/{nome}";
+        }
+    }
+
+    private async Task Guardar()
     {
         if (categoria != null)
         {
             await CategoriaService.UpdateAsync(categoria);
-            NavigationManager.NavigateTo("/categorias");
+            Nav.NavigateTo("/categorias");
         }
     }
-
-    private void Voltar() => NavigationManager.NavigateTo("/categorias");
 }
