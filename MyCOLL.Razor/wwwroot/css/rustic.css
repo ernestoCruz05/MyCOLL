@@ -1,6 +1,6 @@
 /* ============================================
    MyCOLL - Rustic/Historian Theme Stylesheet
-   Updated for Big Posters & Subcategory Chips
+   Updated: Cards made smaller (180x270)
    ============================================ */
 
 /* ---- CSS Variables ---- */
@@ -112,22 +112,20 @@ body {
     }
 
 /* ============================================
-   CATEGORY SLIDER (NEW: POSTER STYLE)
+   CATEGORY SLIDER (UPDATED SIZE)
    ============================================ */
 .big-category-slider {
     display: flex;
-    flex-wrap: nowrap; /* Garante que não quebra linha */
-    overflow-x: auto; /* Scroll horizontal */
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 20px;
     padding: 25px 20px;
     background-color: var(--aged-paper);
     border-bottom: 2px solid var(--rustic-gold);
-    /* Scrollbar personalizada */
     scrollbar-width: thin;
     scrollbar-color: var(--rustic-gold) transparent;
 }
 
-    /* Estilo da Scrollbar Webkit */
     .big-category-slider::-webkit-scrollbar {
         height: 8px;
     }
@@ -141,11 +139,11 @@ body {
         background: transparent;
     }
 
-/* O Cartão Poster */
+/* The Poster Card - SMALLER SIZE HERE */
 .category-poster {
-    flex: 0 0 auto; /* Impede encolhimento */
-    width: 220px; /* Largura fixa */
-    height: 320px; /* Altura fixa */
+    flex: 0 0 auto;
+    width: 180px; /* REDUCED from 220px */
+    height: 270px; /* REDUCED from 320px */
     position: relative;
     border-radius: 12px;
     overflow: hidden;
@@ -156,10 +154,9 @@ body {
     background-color: #2c2c2c;
 }
 
-    /* Estado Ativo */
     .category-poster.active {
         border-color: var(--rustic-gold);
-        transform: translateY(-10px);
+        transform: translateY(-8px);
         box-shadow: 0 15px 25px rgba(255, 179, 0, 0.4);
     }
 
@@ -167,7 +164,7 @@ body {
         transform: translateY(-5px);
     }
 
-/* Imagem do Poster */
+/* Poster Image */
 .poster-img {
     width: 100%;
     height: 100%;
@@ -179,7 +176,7 @@ body {
     transform: scale(1.1);
 }
 
-/* Placeholder (Sem imagem) */
+/* Placeholder */
 .poster-placeholder {
     width: 100%;
     height: 100%;
@@ -190,21 +187,25 @@ body {
     color: var(--rustic-gold);
 }
 
-/* Overlay do Texto */
+    .poster-placeholder i {
+        font-size: 3rem; /* Scaled down icon */
+    }
+
+/* Text Overlay */
 .poster-overlay {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
-    padding: 60px 10px 15px 10px;
+    padding: 40px 10px 15px 10px; /* Adjusted padding */
     text-align: center;
 }
 
 .poster-title {
     color: #fff;
     font-family: var(--font-display);
-    font-size: 1.4rem;
+    font-size: 1.15rem; /* Slightly smaller font */
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -212,12 +213,12 @@ body {
 }
 
 /* ============================================
-   SUBCATEGORY STRIP (NEW: CHIPS)
+   SUBCATEGORY STRIP (CHIPS)
    ============================================ */
 .subcategory-strip {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
+    padding: 12px 20px;
     background-color: rgba(62, 39, 35, 0.05);
     border-bottom: 1px solid rgba(62, 39, 35, 0.1);
     overflow-x: auto;
@@ -299,9 +300,8 @@ body {
         border-color: var(--rustic-dark);
     }
 
-    /* Novo Wrapper de Imagem */
     .product-card .img-wrapper {
-        height: 220px;
+        height: 200px; /* Reduced from 220px to match smaller vibe */
         overflow: hidden;
         background: var(--rustic-light);
         position: relative;
@@ -319,7 +319,7 @@ body {
     }
 
 .card-body {
-    padding: 1rem;
+    padding: 0.9rem;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -327,23 +327,22 @@ body {
 
 .card-title {
     font-family: var(--font-display);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--rustic-dark);
     margin-bottom: 0.5rem;
 }
 
 .price-tag {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: bold;
     color: var(--rustic-dark);
     font-family: var(--font-display);
 }
 
 /* ============================================
-   CART DRAWER & MODALS (KEPT ESSENTIALS)
+   CART DRAWER & MODALS
    ============================================ */
-/* Cart Backdrop */
 .cart-backdrop, .modal-backdrop {
     position: fixed;
     top: 0;
@@ -355,7 +354,6 @@ body {
     animation: fadeIn 0.2s ease;
 }
 
-/* Drawer */
 .cart-drawer {
     position: fixed;
     top: 0;
@@ -384,7 +382,6 @@ body {
     align-items: center;
 }
 
-/* Product Modal Basic Styles */
 .product-modal {
     background: var(--parchment);
     border: 3px solid var(--rustic-dark);
@@ -413,11 +410,11 @@ body {
     }
 
     .category-poster {
-        width: 160px; /* Um pouco menor em mobile */
-        height: 240px;
+        width: 140px; /* Even smaller for mobile */
+        height: 210px;
     }
 
     .poster-title {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 }

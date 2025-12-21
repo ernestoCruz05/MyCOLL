@@ -6,120 +6,147 @@
 @inject CartService CartService
 @inject UserService UserService
 
-<div class="rustic-theme">
-    <!-- Navbar -->
-    <RusticNavbar 
-        OnCartToggle="ToggleCart" 
-        OnLoginRequest="ShowLoginModal" 
-        OnSearch="HandleSearch"
-        OnHomeClick="ResetView" />
+<div class="rustic-body" style="min-height: 100vh;">
+    <RusticNavbar OnCartToggle="ToggleCart" 
+                  OnLoginRequest="ShowLoginModal" 
+                  OnSearch="HandleSearch"
+                  OnHomeClick="ResetView" />
 
-    <!-- Category Slider -->
-    @if (categories != null && categories.Any())
+    @if (categories != null)
     {
-        <CategorySlider 
-            Categories="categories" 
-            SelectedCategoryId="selectedCategoryId" 
-            OnCategorySelected="FilterByCategory" />
-    }
-
-    <!-- Hero Banner (shown on home view) -->
-    @if (string.IsNullOrEmpty(searchTerm) && selectedCategoryId == null)
-    {
-        <div class="hero-banner">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    <i class="fas fa-scroll"></i> Discover Rare Artifacts
-                </h1>
-                <p class="hero-subtitle">
-                    Explore our curated collection of historical treasures, 
-                    vintage memorabilia, and unique collectibles from around the world.
-                </p>
+        <div class="big-category-slider">
+            
+            <div class="category-poster @(selectedMainId == null ? "active" : "")"
+                 @onclick="() => SelectMainCategory(null)">
+                <div class="poster-placeholder">
+                    <i class="fas fa-globe-europe"></i>
+                </div>
+                <div class="poster-overlay">
+                    <span class="poster-title">ALL</span>
+                </div>
             </div>
-        </div>
-    }
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Section Header -->
-        <div class="section-header">
-            <h2 class="section-title">
-                @if (!string.IsNullOrEmpty(searchTerm))
-                {
-                    <i class="fas fa-search"></i>
-                    <span>Search Results: "@searchTerm"</span>
-                }
-                else if (selectedCategoryId != null)
-                {
-                    <i class="fas fa-tag"></i>
-                    <span>@GetSelectedCategoryName()</span>
-                }
-                else
-                {
-                    <i class="fas fa-gem"></i>
-                    <span>Featured Collection</span>
-                }
-            </h2>
-            @if (products != null)
+            @foreach (var cat in MainCategories)
             {
-                <span class="product-count">@products.Count artifact(s) found</span>
+                <div class="category-poster @(selectedMainId == cat.Id ? "active" : "")"
+                     @onclick="() => SelectMainCategory(cat)">
+
+                    @if (!string.IsNullOrEmpty(cat.ImagemUrl))
+                    {
+                        <img src="@GetFullImageUrl(cat.ImagemUrl)" class="poster-img" alt="@cat.Nome" />
+                    }
+                    else
+                    {
+                        <div class="poster-placeholder">
+                            <i class="fas fa-image"></i>
+                        </div>
+                    }
+
+                    <div class="poster-overlay">
+                        <span class="poster-title">@cat.Nome</span>
+                    </div>
+                </div>
             }
         </div>
 
-        <!-- Product Grid -->
+        @if (selectedMainCategory?.SubCategorias != null && selectedMainCategory.SubCategorias.Any())
+        {
+            <div class="subcategory-strip fade-in">
+                <span class="strip-label">
+                    <i class="fas fa-level-down-alt"></i> @selectedMainCategory.Nome:
+                </span>
+
+                <div class="chip-scroller">
+                    <button class="rustic-chip @(selectedSubId == null ? "active" : "")"
+                            @onclick="() => SelectSubCategory(null)">
+                        Ver Tudo
+                    </button>
+
+                    @foreach (var sub in selectedMainCategory.SubCategorias)
+                    {
+                        <button class="rustic-chip @(selectedSubId == sub.Id ? "active" : "")"
+                                @onclick="() => SelectSubCategory(sub)">
+                            @sub.Nome
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <div class="container mt-4">
+        <div class="section-header mb-3">
+            <h2 class="section-title" style="font-family: var(--font-display); color: var(--rustic-dark);">
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <i class="fas fa-search"></i> <span>Search Results: "@searchTerm"</span>
+                }
+                else if (selectedMainCategory != null)
+                {
+                    <i class="fas fa-tag"></i> <span>@(selectedSubId != null ? GetCategoryName(selectedSubId) : selectedMainCategory.Nome)</span>
+                }
+                else
+                {
+                    <i class="fas fa-gem"></i> <span>Featured Collection</span>
+                }
+            </h2>
+        </div>
+
         @if (isLoading)
         {
-            <div class="loading-container">
-                <div class="loading-spinner"></div>
-                <p class="loading-text">Discovering artifacts...</p>
+            <div class="text-center mt-5">
+                <div class="spinner-border text-warning" role="status"></div>
+                <p class="mt-2 text-muted">Discovering artifacts...</p>
             </div>
         }
         else if (products == null || !products.Any())
         {
-            <div class="empty-state">
-                <i class="fas fa-box-open"></i>
-                <h4>No artifacts found</h4>
-                <p>Try adjusting your search or browse different categories</p>
+            <div class="col-12 text-center mt-5" style="color: var(--rustic-medium);">
+                <i class="fas fa-search fa-3x mb-3" style="opacity: 0.5;"></i>
+                <p>No artifacts found in this collection.</p>
             </div>
         }
         else
         {
-            <div class="product-grid">
-                @foreach (var item in products)
+            <div class="row">
+                @foreach (var p in products)
                 {
-                    <ProductCard 
-                        Product="item" 
-                        OnInspect="InspectProduct" 
-                        OnAddToCart="HandleAddToCart" />
+                    <div class="col-md-4 col-sm-6 mb-4">
+                        <div class="card product-card">
+                            <div class="img-wrapper">
+                                <img src="@p.ImagemUrl" alt="@p.Nome">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">@p.Nome</h5>
+                                <p class="card-text text-muted small">
+                                    @((p.Descricao?.Length > 60) ? p.Descricao.Substring(0, 60) + "..." : p.Descricao)
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="price-tag">@p.Preco.ToString("C")</span>
+                                    <button class="btn btn-sm btn-dark" @onclick="() => InspectProduct(p)">Detalhes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 }
             </div>
         }
     </div>
-
-    <!-- Decorative Border -->
-    <div class="decorative-border"></div>
 </div>
 
-<!-- Cart Drawer -->
-<CartDrawer 
-    IsOpen="isCartOpen" 
-    OnClose="CloseCart" 
-    OnCheckout="HandleCheckout" />
+<CartDrawer IsOpen="isCartOpen" OnClose="CloseCart" OnCheckout="HandleCheckout" />
 
-<!-- Product Detail Modal -->
-<ProductDetailModal 
-    Product="selectedProduct" 
-    CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
-    IsVisible="isModalOpen" 
-    OnClose="CloseModal" 
-    OnAddToCart="HandleModalAddToCart" />
+<ProductDetailModal Product="selectedProduct" 
+                    CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
+                    IsVisible="isModalOpen" 
+                    OnClose="CloseModal" 
+                    OnAddToCart="HandleModalAddToCart" />
 
-<!-- Toast Notification -->
 @if (showToast)
 {
-    <div class="toast-notification">
+    <div class="toast-notification" style="position: fixed; bottom: 20px; right: 20px; background: var(--rustic-dark); color: var(--rustic-gold); padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 2000; animation: fadeIn 0.3s;">
         <i class="fas fa-check-circle"></i>
-        <span>@toastMessage</span>
+        <span class="ms-2">@toastMessage</span>
     </div>
 }
 
@@ -128,17 +155,34 @@
     private List<Produto>? products;
     private List<Categoria>? categories;
     
-    // State
+    // Selection State
+    int? selectedMainId = null;
+    Categoria? selectedMainCategory = null;
+    int? selectedSubId = null;
+
+    // UI State
     private bool isLoading = true;
     private bool isCartOpen = false;
     private bool isModalOpen = false;
     private Produto? selectedProduct;
-    private int? selectedCategoryId = null;
     private string searchTerm = string.Empty;
-    
-    // Toast
     private bool showToast = false;
     private string toastMessage = string.Empty;
+
+    // ROBUST FILTER: Excludes subcategories from the main slider
+    IEnumerable<Categoria> MainCategories
+    {
+        get
+        {
+            if (categories == null) return Enumerable.Empty<Categoria>();
+            var subCategoryIds = categories
+                .Where(c => c.SubCategorias != null)
+                .SelectMany(c => c.SubCategorias)
+                .Select(sc => sc.Id)
+                .ToHashSet();
+            return categories.Where(c => c.CategoriaPaiId == null && !subCategoryIds.Contains(c.Id));
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,24 +192,14 @@
     private async Task LoadInitialData()
     {
         isLoading = true;
-        StateHasChanged();
-
         try
         {
-            // Load categories and products in parallel
-            var categoriesTask = ApiService.GetCategoriesAsync();
-            var productsTask = ApiService.GetProductsAsync();
-
-            await Task.WhenAll(categoriesTask, productsTask);
-
-            categories = await categoriesTask;
-            products = await productsTask;
+            categories = await ApiService.GetCategoriesAsync();
+            await SelectMainCategory(null); // Load all products initially
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading data: {ex.Message}");
-            products = new List<Produto>();
-            categories = new List<Categoria>();
+            Console.WriteLine($"Error: {ex.Message}");
         }
         finally
         {
@@ -174,21 +208,38 @@
         }
     }
 
-    private async Task FilterByCategory(int? categoryId)
+    // Handles clicking a Big Poster
+    async Task SelectMainCategory(Categoria? cat)
     {
-        selectedCategoryId = categoryId;
+        selectedMainCategory = cat;
+        selectedMainId = cat?.Id;
+        selectedSubId = null;
         searchTerm = string.Empty;
-        isLoading = true;
-        StateHasChanged();
+        
+        await LoadProducts(selectedMainId);
+    }
 
+    // Handles clicking a Text Chip
+    async Task SelectSubCategory(Categoria? sub)
+    {
+        if (sub == null)
+        {
+            selectedSubId = null;
+            await LoadProducts(selectedMainId);
+        }
+        else
+        {
+            selectedSubId = sub.Id;
+            await LoadProducts(selectedSubId);
+        }
+    }
+
+    async Task LoadProducts(int? catId)
+    {
+        isLoading = true;
         try
         {
-            products = await ApiService.GetProductsAsync(categoryId);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error filtering: {ex.Message}");
-            products = new List<Produto>();
+            products = await ApiService.GetProductsAsync(catId);
         }
         finally
         {
@@ -200,25 +251,20 @@
     private async Task HandleSearch(string term)
     {
         searchTerm = term;
-        selectedCategoryId = null;
+        selectedMainId = null;
+        selectedMainCategory = null;
+        selectedSubId = null;
         
         if (string.IsNullOrWhiteSpace(term))
         {
-            await LoadInitialData();
+            await LoadProducts(null);
             return;
         }
 
         isLoading = true;
-        StateHasChanged();
-
         try
         {
             products = await ApiService.SearchProductsAsync(term);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error searching: {ex.Message}");
-            products = new List<Produto>();
         }
         finally
         {
@@ -229,79 +275,63 @@
 
     private async Task ResetView()
     {
-        searchTerm = string.Empty;
-        selectedCategoryId = null;
-        await LoadInitialData();
+        await SelectMainCategory(null);
     }
+
+    // --- Helpers & UI Logic ---
 
     private void InspectProduct(Produto product)
     {
         selectedProduct = product;
         isModalOpen = true;
-        StateHasChanged();
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
         selectedProduct = null;
-        StateHasChanged();
-    }
-
-    private void HandleAddToCart(Produto product)
-    {
-        ShowToast($"Added '{product.Nome}' to cart");
     }
 
     private void HandleModalAddToCart((Produto product, int quantity) args)
     {
+        // Add to cart logic here (using CartService)
+        // CartService.AddItem(args.product, args.quantity); 
         ShowToast($"Added {args.quantity}x '{args.product.Nome}' to cart");
     }
 
-    private void ToggleCart()
-    {
-        isCartOpen = !isCartOpen;
-        StateHasChanged();
-    }
-
-    private void CloseCart()
-    {
-        isCartOpen = false;
-        StateHasChanged();
-    }
-
+    private void ToggleCart() => isCartOpen = !isCartOpen;
+    private void CloseCart() => isCartOpen = false;
+    
     private void HandleCheckout()
     {
         if (!UserService.IsLoggedIn)
         {
             ShowLoginModal();
-            ShowToast("Please login to checkout");
             return;
         }
-
-        // Navigate to checkout or show checkout modal
         ShowToast("Proceeding to checkout...");
         CloseCart();
     }
 
     private void ShowLoginModal()
     {
-        // This would trigger a login modal
-        ShowToast("Login functionality coming soon!");
+        ShowToast("Please Login to continue");
+        // Trigger login modal logic here
     }
 
-    private string GetSelectedCategoryName()
+    private string GetCategoryName(int? categoryId)
     {
-        if (selectedCategoryId == null || categories == null) 
-            return "All Collections";
-        
-        return categories.FirstOrDefault(c => c.Id == selectedCategoryId)?.Nome ?? "Category";
+        if (categoryId == null || categories == null) return "";
+        // Search in main categories and subcategories
+        var allCats = categories.Concat(categories.SelectMany(c => c.SubCategorias)).ToList();
+        return allCats.FirstOrDefault(c => c.Id == categoryId)?.Nome ?? "";
     }
 
-    private string? GetCategoryName(int? categoryId)
+    private string GetFullImageUrl(string? imageUrl)
     {
-        if (categoryId == null || categories == null) return null;
-        return categories.FirstOrDefault(c => c.Id == categoryId)?.Nome;
+        if (string.IsNullOrEmpty(imageUrl)) return "";
+        if (imageUrl.StartsWith("http")) return imageUrl;
+        return $"{ApiService.GetBaseUrl().TrimEnd('/')}/{imageUrl.TrimStart('/')}";
     }
 
     private async void ShowToast(string message)
@@ -309,7 +339,6 @@
         toastMessage = message;
         showToast = true;
         StateHasChanged();
-
         await Task.Delay(3000);
         showToast = false;
         StateHasChanged();
