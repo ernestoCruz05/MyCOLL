@@ -6,18 +6,18 @@
 @inject CartService CartService
 @inject UserService UserService
 
-<div class="rustic-body" style="min-height: 100vh;">
-    <RusticNavbar OnCartToggle="ToggleCart" 
-                  OnLoginRequest="ShowLoginModal" 
-                  OnSearch="HandleSearch"
-                  OnHomeClick="ResetView" />
+<div class="rustic-theme">
+    <RusticNavbar 
+        OnCartToggle="ToggleCart" 
+        OnLoginRequest="ShowLoginModal" 
+        OnSearch="HandleSearch"
+        OnHomeClick="ResetView" />
 
-    @if (categories != null)
+    @if (categories != null && categories.Any())
     {
         <div class="big-category-slider">
-            
-            <div class="category-poster @(selectedMainId == null ? "active" : "")"
-                 @onclick="() => SelectMainCategory(null)">
+            <div class="category-poster @(selectedCategoryId == null ? "active" : "")"
+                 @onclick="() => FilterByCategory(null)">
                 <div class="poster-placeholder">
                     <i class="fas fa-globe-europe"></i>
                 </div>
@@ -28,8 +28,8 @@
 
             @foreach (var cat in MainCategories)
             {
-                <div class="category-poster @(selectedMainId == cat.Id ? "active" : "")"
-                     @onclick="() => SelectMainCategory(cat)">
+                <div class="category-poster @(selectedCategoryId == cat.Id ? "active" : "")"
+                     @onclick="() => FilterByCategory(cat.Id)">
 
                     @if (!string.IsNullOrEmpty(cat.ImagemUrl))
                     {
@@ -49,23 +49,21 @@
             }
         </div>
 
-        @if (selectedMainCategory?.SubCategorias != null && selectedMainCategory.SubCategorias.Any())
+        @if (SelectedMainCategory?.SubCategorias != null && SelectedMainCategory.SubCategorias.Any())
         {
             <div class="subcategory-strip fade-in">
                 <span class="strip-label">
-                    <i class="fas fa-level-down-alt"></i> @selectedMainCategory.Nome:
+                    <i class="fas fa-level-down-alt"></i> @SelectedMainCategory.Nome:
                 </span>
-
                 <div class="chip-scroller">
                     <button class="rustic-chip @(selectedSubId == null ? "active" : "")"
                             @onclick="() => SelectSubCategory(null)">
                         Ver Tudo
                     </button>
-
-                    @foreach (var sub in selectedMainCategory.SubCategorias)
+                    @foreach (var sub in SelectedMainCategory.SubCategorias)
                     {
                         <button class="rustic-chip @(selectedSubId == sub.Id ? "active" : "")"
-                                @onclick="() => SelectSubCategory(sub)">
+                                @onclick="() => SelectSubCategory(sub.Id)">
                             @sub.Nome
                         </button>
                     }
@@ -74,16 +72,16 @@
         }
     }
 
-    <div class="container mt-4">
-        <div class="section-header mb-3">
-            <h2 class="section-title" style="font-family: var(--font-display); color: var(--rustic-dark);">
+    <div class="main-content">
+        <div class="section-header">
+            <h2 class="section-title">
                 @if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    <i class="fas fa-search"></i> <span>Search Results: "@searchTerm"</span>
+                    <i class="fas fa-search"></i> <span>Resultados: "@searchTerm"</span>
                 }
-                else if (selectedMainCategory != null)
+                else if (selectedCategoryId != null)
                 {
-                    <i class="fas fa-tag"></i> <span>@(selectedSubId != null ? GetCategoryName(selectedSubId) : selectedMainCategory.Nome)</span>
+                    <i class="fas fa-tag"></i> <span>@GetSelectedCategoryName()</span>
                 }
                 else
                 {
@@ -94,95 +92,99 @@
 
         @if (isLoading)
         {
-            <div class="text-center mt-5">
-                <div class="spinner-border text-warning" role="status"></div>
-                <p class="mt-2 text-muted">Discovering artifacts...</p>
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Discovering artifacts...</p>
             </div>
         }
         else if (products == null || !products.Any())
         {
-            <div class="col-12 text-center mt-5" style="color: var(--rustic-medium);">
-                <i class="fas fa-search fa-3x mb-3" style="opacity: 0.5;"></i>
-                <p>No artifacts found in this collection.</p>
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <h4>No artifacts found</h4>
             </div>
         }
         else
         {
-            <div class="row">
-                @foreach (var p in products)
+            <div class="product-grid">
+                @foreach (var item in products)
                 {
-                    <div class="col-md-4 col-sm-6 mb-4">
-                        <div class="card product-card">
-                            <div class="img-wrapper">
-                                <img src="@p.ImagemUrl" alt="@p.Nome">
-                            </div>
-                            <div class="card-body">
-                                <h5 class="card-title">@p.Nome</h5>
-                                <p class="card-text text-muted small">
-                                    @((p.Descricao?.Length > 60) ? p.Descricao.Substring(0, 60) + "..." : p.Descricao)
-                                </p>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <span class="price-tag">@p.Preco.ToString("C")</span>
-                                    <button class="btn btn-sm btn-dark" @onclick="() => InspectProduct(p)">Detalhes</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <ProductCard Product="item" OnInspect="InspectProduct" OnAddToCart="HandleAddToCart" />
                 }
             </div>
         }
     </div>
+
+    @if (randomProduct != null && showRecommendation)
+    {
+        <div class="recommendation-banner fade-in-up">
+            <button class="close-rec-btn" @onclick="() => showRecommendation = false">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="rec-header">
+                 Recomendado: </div>
+            
+            <div class="rec-content" @onclick="() => InspectProduct(randomProduct)">
+                <div class="rec-img-wrapper">
+                    <img src="@randomProduct.ImagemUrl" alt="@randomProduct.Nome" 
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+                    <i class="fas fa-cube" style="display:none; font-size: 1.5rem; color: #888;"></i>
+                </div>
+                
+                <div class="rec-info">
+                    <span class="rec-name">@((randomProduct.Nome.Length > 20) ? randomProduct.Nome.Substring(0, 20) + "..." : randomProduct.Nome)</span>
+                    <span class="rec-price">@randomProduct.Preco.ToString("C")</span>
+                </div>
+                
+                <div class="rec-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="decorative-border"></div>
 </div>
 
 <CartDrawer IsOpen="isCartOpen" OnClose="CloseCart" OnCheckout="HandleCheckout" />
-
-<ProductDetailModal Product="selectedProduct" 
-                    CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
-                    IsVisible="isModalOpen" 
-                    OnClose="CloseModal" 
-                    OnAddToCart="HandleModalAddToCart" />
-
-@if (showToast)
-{
-    <div class="toast-notification" style="position: fixed; bottom: 20px; right: 20px; background: var(--rustic-dark); color: var(--rustic-gold); padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 2000; animation: fadeIn 0.3s;">
-        <i class="fas fa-check-circle"></i>
-        <span class="ms-2">@toastMessage</span>
-    </div>
-}
+<ProductDetailModal Product="selectedProduct" CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
+                    IsVisible="isModalOpen" OnClose="CloseModal" OnAddToCart="HandleModalAddToCart" />
+@if (showToast) { <div class="toast-notification"><i class="fas fa-check-circle"></i><span>@toastMessage</span></div> }
 
 @code {
     // Data
     private List<Produto>? products;
     private List<Categoria>? categories;
     
-    // Selection State
-    int? selectedMainId = null;
-    Categoria? selectedMainCategory = null;
-    int? selectedSubId = null;
+    // Recommendation Logic
+    private Produto? randomProduct;
+    // Inicializa como true sempre que a página carrega
+    private bool showRecommendation = true;
 
-    // UI State
+    // State
     private bool isLoading = true;
     private bool isCartOpen = false;
     private bool isModalOpen = false;
     private Produto? selectedProduct;
+    private int? selectedCategoryId = null;
+    private int? selectedSubId = null;
     private string searchTerm = string.Empty;
     private bool showToast = false;
     private string toastMessage = string.Empty;
 
-    // ROBUST FILTER: Excludes subcategories from the main slider
-    IEnumerable<Categoria> MainCategories
+    IEnumerable<Categoria> MainCategories 
     {
         get
         {
             if (categories == null) return Enumerable.Empty<Categoria>();
-            var subCategoryIds = categories
-                .Where(c => c.SubCategorias != null)
-                .SelectMany(c => c.SubCategorias)
-                .Select(sc => sc.Id)
-                .ToHashSet();
-            return categories.Where(c => c.CategoriaPaiId == null && !subCategoryIds.Contains(c.Id));
+            var subIds = categories.Where(c => c.SubCategorias != null)
+                .SelectMany(c => c.SubCategorias).Select(sc => sc.Id).ToHashSet();
+            return categories.Where(c => c.CategoriaPaiId == null && !subIds.Contains(c.Id));
         }
     }
+
+    Categoria? SelectedMainCategory => categories?.FirstOrDefault(c => c.Id == selectedCategoryId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -194,12 +196,25 @@
         isLoading = true;
         try
         {
-            categories = await ApiService.GetCategoriesAsync();
-            await SelectMainCategory(null); // Load all products initially
+            var categoriesTask = ApiService.GetCategoriesAsync();
+            var productsTask = ApiService.GetProductsAsync();
+            await Task.WhenAll(categoriesTask, productsTask);
+            categories = await categoriesTask;
+            products = await productsTask;
+
+            // Pick a random product for recommendation
+            if (products != null && products.Count > 0)
+            {
+                var rnd = new Random();
+                randomProduct = products[rnd.Next(products.Count)];
+                // Garante que aparece no reload
+                showRecommendation = true; 
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
+            products = new List<Produto>();
         }
         finally
         {
@@ -208,124 +223,39 @@
         }
     }
 
-    // Handles clicking a Big Poster
-    async Task SelectMainCategory(Categoria? cat)
+    private async Task FilterByCategory(int? categoryId)
     {
-        selectedMainCategory = cat;
-        selectedMainId = cat?.Id;
+        selectedCategoryId = categoryId;
         selectedSubId = null;
         searchTerm = string.Empty;
-        
-        await LoadProducts(selectedMainId);
+        await LoadProducts(selectedCategoryId);
     }
 
-    // Handles clicking a Text Chip
-    async Task SelectSubCategory(Categoria? sub)
+    private async Task SelectSubCategory(int? subId)
     {
-        if (sub == null)
-        {
-            selectedSubId = null;
-            await LoadProducts(selectedMainId);
-        }
-        else
-        {
-            selectedSubId = sub.Id;
-            await LoadProducts(selectedSubId);
-        }
+        selectedSubId = subId;
+        await LoadProducts(subId ?? selectedCategoryId);
     }
 
-    async Task LoadProducts(int? catId)
+    private async Task LoadProducts(int? id)
     {
         isLoading = true;
-        try
-        {
-            products = await ApiService.GetProductsAsync(catId);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        StateHasChanged();
+        try { products = await ApiService.GetProductsAsync(id); }
+        finally { isLoading = false; StateHasChanged(); }
     }
 
     private async Task HandleSearch(string term)
     {
         searchTerm = term;
-        selectedMainId = null;
-        selectedMainCategory = null;
-        selectedSubId = null;
-        
-        if (string.IsNullOrWhiteSpace(term))
-        {
-            await LoadProducts(null);
-            return;
-        }
-
+        selectedCategoryId = null;
+        if (string.IsNullOrWhiteSpace(term)) { await LoadInitialData(); return; }
         isLoading = true;
-        try
-        {
-            products = await ApiService.SearchProductsAsync(term);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        products = await ApiService.SearchProductsAsync(term);
+        isLoading = false;
     }
 
-    private async Task ResetView()
-    {
-        await SelectMainCategory(null);
-    }
-
-    // --- Helpers & UI Logic ---
-
-    private void InspectProduct(Produto product)
-    {
-        selectedProduct = product;
-        isModalOpen = true;
-    }
-
-    private void CloseModal()
-    {
-        isModalOpen = false;
-        selectedProduct = null;
-    }
-
-    private void HandleModalAddToCart((Produto product, int quantity) args)
-    {
-        // Add to cart logic here (using CartService)
-        // CartService.AddItem(args.product, args.quantity); 
-        ShowToast($"Added {args.quantity}x '{args.product.Nome}' to cart");
-    }
-
-    private void ToggleCart() => isCartOpen = !isCartOpen;
-    private void CloseCart() => isCartOpen = false;
-    
-    private void HandleCheckout()
-    {
-        if (!UserService.IsLoggedIn)
-        {
-            ShowLoginModal();
-            return;
-        }
-        ShowToast("Proceeding to checkout...");
-        CloseCart();
-    }
-
-    private void ShowLoginModal()
-    {
-        ShowToast("Please Login to continue");
-        // Trigger login modal logic here
-    }
-
-    private string GetCategoryName(int? categoryId)
-    {
-        if (categoryId == null || categories == null) return "";
-        // Search in main categories and subcategories
-        var allCats = categories.Concat(categories.SelectMany(c => c.SubCategorias)).ToList();
-        return allCats.FirstOrDefault(c => c.Id == categoryId)?.Nome ?? "";
-    }
+    private async Task ResetView() => await LoadInitialData();
 
     private string GetFullImageUrl(string? imageUrl)
     {
@@ -334,13 +264,28 @@
         return $"{ApiService.GetBaseUrl().TrimEnd('/')}/{imageUrl.TrimStart('/')}";
     }
 
-    private async void ShowToast(string message)
+    private string GetSelectedCategoryName()
     {
-        toastMessage = message;
-        showToast = true;
-        StateHasChanged();
-        await Task.Delay(3000);
-        showToast = false;
-        StateHasChanged();
+        if (selectedSubId != null) return GetCategoryName(selectedSubId) ?? "Subcategory";
+        if (selectedCategoryId != null) return GetCategoryName(selectedCategoryId) ?? "Category";
+        return "All Collections";
     }
+
+    private string? GetCategoryName(int? categoryId)
+    {
+        if (categoryId == null || categories == null) return null;
+        var all = categories.Concat(categories.SelectMany(c => c.SubCategorias)).ToList();
+        return all.FirstOrDefault(c => c.Id == categoryId)?.Nome;
+    }
+
+    // UI Actions
+    private void InspectProduct(Produto product) { selectedProduct = product; isModalOpen = true; }
+    private void CloseModal() { isModalOpen = false; selectedProduct = null; }
+    private void HandleAddToCart(Produto product) { ShowToast($"Added '{product.Nome}' to cart"); }
+    private void HandleModalAddToCart((Produto product, int quantity) args) { ShowToast($"Added {args.quantity}x '{args.product.Nome}' to cart"); }
+    private void ToggleCart() => isCartOpen = !isCartOpen;
+    private void CloseCart() => isCartOpen = false;
+    private void HandleCheckout() { if(!UserService.IsLoggedIn){ShowLoginModal(); return;} ShowToast("Checkout..."); CloseCart(); }
+    private void ShowLoginModal() { ShowToast("Please login first"); }
+    private async void ShowToast(string message) { toastMessage = message; showToast = true; StateHasChanged(); await Task.Delay(3000); showToast = false; StateHasChanged(); }
 }
