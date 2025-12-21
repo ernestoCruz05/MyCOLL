@@ -7,6 +7,8 @@
         public string? Descricao { get; set; }
         public string? ImagemUrl { get; set; }
         public bool Ativa { get; set; }
+        public int? CategoriaPaiId { get; set; }
+        public List<Categoria> SubCategorias { get; set; } = new();
     }
 
     public class Produto

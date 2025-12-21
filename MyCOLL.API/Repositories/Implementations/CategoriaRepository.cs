@@ -16,7 +16,9 @@ namespace MyCOLL.API.Repositories.Implementations
 
         public async Task<IEnumerable<Categoria>> GetAllAsync()
         {
-            return await _context.Categorias.ToListAsync();
+            return await _context.Categorias
+                .Include(c => c.SubCategorias)
+                .ToListAsync();
         }
 
         public async Task<Categoria?> GetByIdAsync(int id)

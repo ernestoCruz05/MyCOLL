@@ -7,10 +7,10 @@ namespace MyCOLL.Frontend
     {
         // Configure your Dev Tunnel URL here
         // NOTE: I removed the extra space you had after "https://"
-        private const string DevTunnelUrl = "https://tmtt857w-7268.uks1.devtunnels.ms/";
+        private const string DevTunnelUrl = "https://localhost:7268/";
 
         // Set to true to use the Tunnel (works for Android, iOS, and Windows)
-        private const bool UseDevTunnel = true;
+        private const bool UseDevTunnel = false;
 
         public static MauiApp CreateMauiApp()
         {

@@ -14,31 +14,95 @@
 
     @if (categories != null)
     {
-        <div class="category-slider">
-            <div class="category-chip" @onclick="() => Filter(null)">All</div>
-            @foreach (var cat in categories)
+        <div class="big-category-slider">
+
+            <div class="category-poster @(selectedMainId == null ? "active" : "")"
+                 @onclick="() => SelectMainCategory(null)">
+                <div class="poster-placeholder">
+                    <i class="fas fa-globe-europe fa-3x"></i>
+                </div>
+                <div class="poster-overlay">
+                    <span class="poster-title">ALL</span>
+                </div>
+            </div>
+
+            @foreach (var cat in MainCategories)
             {
-                <div class="category-chip" @onclick="() => Filter(cat.Id)">@cat.Nome</div>
+                <div class="category-poster @(selectedMainId == cat.Id ? "active" : "")"
+                     @onclick="() => SelectMainCategory(cat)">
+
+                    @if (!string.IsNullOrEmpty(cat.ImagemUrl))
+                    {
+                        <img src="@GetFullImageUrl(cat.ImagemUrl)" class="poster-img" alt="@cat.Nome" />
+                    }
+                    else
+                    {
+                        <div class="poster-placeholder">
+                            <i class="fas fa-image fa-3x"></i>
+                        </div>
+                    }
+
+                    <div class="poster-overlay">
+                        <span class="poster-title">@cat.Nome</span>
+                    </div>
+                </div>
             }
         </div>
+
+        @if (selectedMainCategory?.SubCategorias != null && selectedMainCategory.SubCategorias.Any())
+        {
+            <div class="subcategory-strip fade-in">
+                <span class="strip-label">
+                    <i class="fas fa-level-down-alt"></i> @selectedMainCategory.Nome:
+                </span>
+
+                <div class="chip-scroller">
+                    <button class="rustic-chip @(selectedSubId == null ? "active" : "")"
+                            @onclick="() => SelectSubCategory(null)">
+                        Ver Tudo
+                    </button>
+
+                    @foreach (var sub in selectedMainCategory.SubCategorias)
+                    {
+                        <button class="rustic-chip @(selectedSubId == sub.Id ? "active" : "")"
+                                @onclick="() => SelectSubCategory(sub)">
+                            @sub.Nome
+                        </button>
+                    }
+                </div>
+            </div>
+        }
     }
 
     <div class="container mt-4">
         <div class="row">
-            @if (products != null)
+            @if (products != null && products.Any())
             {
                 @foreach (var p in products)
                 {
                     <div class="col-md-4 col-sm-6 mb-4">
-                        <div class="card" style="border: 1px solid var(--rustic-dark);">
+                        <div class="card product-card">
+                            <div class="img-wrapper">
+                                <img src="@p.ImagemUrl" alt="@p.Nome">
+                            </div>
                             <div class="card-body">
                                 <h5 class="card-title">@p.Nome</h5>
-                                <p>@p.Preco.ToString("C")</p>
-                                <button class="btn btn-dark w-100">Inspect</button>
+                                <p class="card-text text-muted small">@((p.Descricao?.Length > 60) ? p.Descricao.Substring(0, 60) + "..." : p.Descricao)</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="price-tag">@p.Preco.ToString("C")</span>
+                                    <button class="btn btn-sm btn-dark">Detalhes</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 }
+            }
+            else
+            {
+                <div class="col-12 text-center mt-5" style="color: var(--rustic-medium);">
+                    <i class="fas fa-search fa-3x mb-3" style="opacity: 0.5;"></i>
+                    <p>No artifacts found in this collection.</p>
+                </div>
             }
         </div>
     </div>
@@ -48,14 +112,52 @@
     List<Categoria>? categories;
     List<Produto>? products;
 
+    // Estado da seleção
+    int? selectedMainId = null;
+    Categoria? selectedMainCategory = null;
+    int? selectedSubId = null;
+
+    // Filtra apenas as categorias que não têm pai (Raiz)
+    IEnumerable<Categoria> MainCategories => categories?.Where(c => c.CategoriaPaiId == null) ?? Enumerable.Empty<Categoria>();
+
     protected override async Task OnInitializedAsync()
     {
         categories = await ApiService.GetCategoriesAsync();
-        await Filter(null);
+        await SelectMainCategory(null);
     }
 
-    async Task Filter(int? catId)
+    async Task SelectMainCategory(Categoria? cat)
+    {
+        selectedMainCategory = cat;
+        selectedMainId = cat?.Id;
+        selectedSubId = null;
+        await LoadProducts(selectedMainId);
+    }
+
+    async Task SelectSubCategory(Categoria? sub)
+    {
+        if (sub == null)
+        {
+            selectedSubId = null;
+            await LoadProducts(selectedMainId);
+        }
+        else
+        {
+            selectedSubId = sub.Id;
+            await LoadProducts(selectedSubId);
+        }
+    }
+
+    async Task LoadProducts(int? catId)
     {
         products = await ApiService.GetProductsAsync(catId);
+        StateHasChanged();
+    }
+
+    private string GetFullImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return "";
+        if (imageUrl.StartsWith("http")) return imageUrl;
+        return $"{ApiService.GetBaseUrl().TrimEnd('/')}/{imageUrl.TrimStart('/')}";
     }
 }
