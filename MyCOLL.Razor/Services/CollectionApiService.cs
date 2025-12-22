@@ -44,11 +44,20 @@ namespace MyCOLL.UIComponents.Services
 
         private void FixImageUrl(Produto p)
         {
-            if (!string.IsNullOrEmpty(p.ImagemUrl) && !p.ImagemUrl.StartsWith("http"))
+            if (string.IsNullOrEmpty(p.ImagemUrl)) return;
+
+            var currentBaseUrl = GetBaseUrl().TrimEnd('/');
+
+            if (p.ImagemUrl.StartsWith("http"))
             {
-                // Prepends the API address (e.g. http://10.0.2.2:5225) to /uploads/...
-                var baseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/');
-                p.ImagemUrl = $"{baseUrl}/{p.ImagemUrl.TrimStart('/')}";
+                if (currentBaseUrl.Contains("10.0.2.2") && p.ImagemUrl.Contains("localhost"))
+                {
+                    p.ImagemUrl = p.ImagemUrl.Replace("localhost", "10.0.2.2");
+                }
+            }
+            else
+            {
+                p.ImagemUrl = $"{currentBaseUrl}/{p.ImagemUrl.TrimStart('/')}";
             }
         }
 
