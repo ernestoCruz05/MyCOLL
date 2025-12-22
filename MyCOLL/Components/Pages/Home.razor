@@ -18,9 +18,8 @@
         </div>
     </div>
 
-    <!-- 1. CARDS DE ESTATÍSTICAS (KPIs) -->
     <div class="row g-4 mb-4">
-        <!-- Vendas Totais -->
+
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
@@ -37,7 +36,6 @@
             </div>
         </div>
 
-        <!-- Encomendas Pendentes -->
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
@@ -54,7 +52,6 @@
             </div>
         </div>
 
-        <!-- Produtos Ativos -->
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
@@ -71,13 +68,12 @@
             </div>
         </div>
 
-        <!-- Categorias -->
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted small text-uppercase fw-bold mb-1">Categorias</p>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Categorias Principais</p>
                             <h3 class="mb-0">@totalCategorias</h3>
                         </div>
                         <div class="bg-info-subtle text-info-emphasis rounded p-2">
@@ -90,7 +86,6 @@
     </div>
 
     <div class="row g-4">
-        <!-- 2. ÚLTIMAS ENCOMENDAS (Tabela) -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3 border-0">
@@ -98,7 +93,6 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <!-- Cabeçalho escuro para contraste -->
                         <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
@@ -127,7 +121,6 @@
                                         <td>@enc.DataEncomenda.ToString("dd/MM")</td>
                                         <td class="fw-bold">@enc.Total.ToString("C2")</td>
                                         <td class="text-center">
-                                            <!-- Badge com classes atualizadas para contraste -->
                                             <span class="badge rounded-pill border px-3 py-2 @GetBadgeClass(enc.Estado)">
                                                 @enc.Estado
                                             </span>
@@ -149,7 +142,6 @@
             </div>
         </div>
 
-        <!-- 3. ÚLTIMAS ATUALIZAÇÕES (Logs) -->
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
@@ -206,7 +198,9 @@
         totalVendas = todasEncomendas.Sum(e => e.Total);
         encomendasPendentes = todasEncomendas.Count(e => e.Estado == EstadoEncomenda.Pendente);
         totalProdutos = todosProdutos.Count;
-        totalCategorias = todasCategorias.Count;
+
+        // CORREÇÃO: Conta apenas categorias principais (onde CategoriaPaiId é null)
+        totalCategorias = todasCategorias.Count(c => c.CategoriaPaiId == null);
 
         ultimasEncomendas = todasEncomendas.Take(5).ToList();
     }

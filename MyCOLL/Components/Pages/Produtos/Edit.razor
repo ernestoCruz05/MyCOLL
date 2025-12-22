@@ -26,9 +26,9 @@
                             <label class="form-label fw-semibold">Nome</label>
                             <InputText @bind-Value="produto.Nome" class="form-control" />
                         </div>
-                         <div class="col-md-4">
-                             <label class="form-label fw-semibold">Stock</label>
-                             <InputNumber @bind-Value="produto.Stock" class="form-control" />
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Stock</label>
+                            <InputNumber @bind-Value="produto.Stock" class="form-control" />
                         </div>
                     </div>
 
@@ -37,7 +37,6 @@
                         <InputTextArea @bind-Value="produto.Descricao" class="form-control" rows="3" />
                     </div>
 
-                    <!-- PREÇOS -->
                     <div class="row mb-3 bg-light p-3 rounded mx-0 border">
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-primary">Preço Base (€)</label>
@@ -49,26 +48,47 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Final (€)</label>
-                            <input type="text" class="form-control fw-bold" value="@((produto.PrecoBase * (1 + produto.MargemLucro/100)).ToString("C2"))" disabled />
+                            <input type="text" class="form-control fw-bold" value="@((produto.PrecoBase * (1 + produto.MargemLucro / 100)).ToString("C2"))" disabled />
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Categoria</label>
-                            <InputSelect @bind-Value="produto.CategoriaId" class="form-select">
-                                @foreach (var c in categorias) { <option value="@c.Id">@c.Nome</option> }
-                            </InputSelect>
+                            <label class="form-label fw-semibold">Categoria Principal</label>
+                            <select class="form-select mb-2" value="@SelectedMainCategoryId" @onchange="OnMainCategoryChange">
+                                <option value="0">-- Selecione Principal --</option>
+                                @foreach (var c in CategoriasPrincipais)
+                                {
+                                    <option value="@c.Id">@c.Nome</option>
+                                }
+                            </select>
+
+                            @if (SubCategoriasDisponiveis.Any())
+                            {
+                                <div class="d-flex align-items-center mt-2">
+                                    <label class="form-label fw-semibold small text-muted me-2 mb-0">Subcategoria:</label>
+                                    <select class="form-select form-select-sm" value="@SelectedSubCategoryId" @onchange="OnSubCategoryChange">
+                                        <option value="0">-- Nenhuma (Usar Principal) --</option>
+                                        @foreach (var sub in SubCategoriasDisponiveis)
+                                        {
+                                            <option value="@sub.Id">@sub.Nome</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Modo de Entrega</label>
                             <InputSelect @bind-Value="produto.ModoEntregaId" class="form-select">
-                                @foreach (var m in modos) { <option value="@m.Id">@m.Nome</option> }
+                                @foreach (var m in modos)
+                                {
+                                    <option value="@m.Id">@m.Nome</option>
+                                }
                             </InputSelect>
                         </div>
                     </div>
 
-                    <!-- Imagem -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Imagem</label>
                         <InputFile OnChange="UploadImagem" class="form-control" accept=".jpg,.png" />
@@ -98,14 +118,81 @@
 @code {
     [Parameter] public int Id { get; set; }
     private Produto? produto;
-    private List<Categoria> categorias = new();
+
+    private List<Categoria> todasCategorias = new();
+    private List<Categoria> CategoriasPrincipais = new();
+    private List<Categoria> SubCategoriasDisponiveis = new();
     private List<ModoEntrega> modos = new();
+
+    private int SelectedMainCategoryId;
+    private int SelectedSubCategoryId;
 
     protected override async Task OnInitializedAsync()
     {
-        categorias = await CategoriaService.GetAllAsync();
+        todasCategorias = await CategoriaService.GetAllAsync();
         modos = await ModoEntregaService.GetAllAsync();
+        CategoriasPrincipais = todasCategorias.Where(c => c.CategoriaPaiId == null).ToList();
+
         produto = await ProdutoService.GetByIdAsync(Id);
+
+        // Lógica para preencher dropdowns se o produto já tiver categoria
+        if (produto != null && produto.CategoriaId > 0)
+        {
+            var catAtual = todasCategorias.FirstOrDefault(c => c.Id == produto.CategoriaId);
+
+            if (catAtual != null)
+            {
+                if (catAtual.CategoriaPaiId != null)
+                {
+                    // É uma subcategoria
+                    SelectedMainCategoryId = catAtual.CategoriaPaiId.Value;
+                    SelectedSubCategoryId = catAtual.Id;
+                }
+                else
+                {
+                    // É uma categoria principal
+                    SelectedMainCategoryId = catAtual.Id;
+                    SelectedSubCategoryId = 0;
+                }
+
+                // Carregar as subs da principal selecionada
+                SubCategoriasDisponiveis = todasCategorias
+                    .Where(c => c.CategoriaPaiId == SelectedMainCategoryId)
+                    .ToList();
+            }
+        }
+    }
+
+    private void OnMainCategoryChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int mainId))
+        {
+            SelectedMainCategoryId = mainId;
+            SelectedSubCategoryId = 0;
+
+            if (mainId > 0)
+            {
+                SubCategoriasDisponiveis = todasCategorias
+                    .Where(c => c.CategoriaPaiId == mainId)
+                    .ToList();
+
+                produto.CategoriaId = mainId;
+            }
+            else
+            {
+                SubCategoriasDisponiveis.Clear();
+                produto.CategoriaId = 0;
+            }
+        }
+    }
+
+    private void OnSubCategoryChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int subId))
+        {
+            SelectedSubCategoryId = subId;
+            produto.CategoriaId = subId > 0 ? subId : SelectedMainCategoryId;
+        }
     }
 
     private async Task UploadImagem(InputFileChangeEventArgs e)

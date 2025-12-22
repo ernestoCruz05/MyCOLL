@@ -29,7 +29,9 @@ namespace MyCOLL.API.Repositories.Implementations
             return await _context.Produtos
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
-                .Where(p => p.Ativo && p.CategoriaId == categoriaId)
+                // CORREÇÃO: Verifica se é a categoria exata OU se é uma subcategoria dela (CategoriaPaiId)
+                .Where(p => p.Ativo &&
+                           (p.CategoriaId == categoriaId || p.Categoria.CategoriaPaiId == categoriaId))
                 .OrderByDescending(p => p.DataCriacao)
                 .ToListAsync();
         }

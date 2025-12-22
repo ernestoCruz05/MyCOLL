@@ -93,10 +93,30 @@
                                     }
                                 </td>
                                 <td class="fw-semibold">@item.Nome</td>
-                                <td><span class="badge bg-light text-dark border">@(item.Categoria?.Nome ?? "-")</span></td>
+
+                                <td>
+                                    @if (item.Categoria != null)
+                                    {
+                                        @if (item.Categoria.CategoriaPai != null)
+                                        {
+                                            <span class="badge bg-light text-secondary border me-1">@item.Categoria.CategoriaPai.Nome</span>
+                                            <i class="bi bi-chevron-right small text-muted" style="font-size: 0.7em;"></i>
+                                            <span class="badge bg-light text-dark border ms-1">@item.Categoria.Nome</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark border fw-bold">@item.Categoria.Nome</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+
                                 <td>@item.Preco.ToString("C2")</td>
                                 <td>
-                                    @if(item.Stock < 5)
+                                    @if (item.Stock < 5)
                                     {
                                         <span class="text-danger fw-bold">@item.Stock un.</span>
                                     }

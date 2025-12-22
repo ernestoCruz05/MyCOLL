@@ -27,8 +27,8 @@
                         <InputText @bind-Value="produto.Nome" class="form-control" placeholder="Ex: Selo Raro 1950" />
                     </div>
                     <div class="col-md-4">
-                         <label class="form-label fw-semibold">Stock Inicial</label>
-                         <InputNumber @bind-Value="produto.Stock" class="form-control" />
+                        <label class="form-label fw-semibold">Stock Inicial</label>
+                        <InputNumber @bind-Value="produto.Stock" class="form-control" />
                     </div>
                 </div>
 
@@ -50,24 +50,45 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold">Preço Final (€)</label>
-                        <input type="text" class="form-control fw-bold" value="@((produto.PrecoBase * (1 + produto.MargemLucro/100)).ToString("C2"))" disabled />
+                        <input type="text" class="form-control fw-bold" value="@((produto.PrecoBase * (1 + produto.MargemLucro / 100)).ToString("C2"))" disabled />
                         <small class="text-muted">Valor de venda</small>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Categoria</label>
-                        <InputSelect @bind-Value="produto.CategoriaId" class="form-select">
-                            <option value="0">-- Selecionar --</option>
-                            @foreach (var c in categorias) { <option value="@c.Id">@c.Nome</option> }
-                        </InputSelect>
+                        <label class="form-label fw-semibold">Categoria Principal</label>
+                        <select class="form-select mb-2" value="@SelectedMainCategoryId" @onchange="OnMainCategoryChange">
+                            <option value="0">-- Selecione Principal --</option>
+                            @foreach (var c in CategoriasPrincipais)
+                            {
+                                <option value="@c.Id">@c.Nome</option>
+                            }
+                        </select>
+
+                        @if (SubCategoriasDisponiveis.Any())
+                        {
+                            <div class="d-flex align-items-center mt-2">
+                                <label class="form-label fw-semibold small text-muted me-2 mb-0">Subcategoria:</label>
+                                <select class="form-select form-select-sm" value="@SelectedSubCategoryId" @onchange="OnSubCategoryChange">
+                                    <option value="0">-- Nenhuma (Usar Principal) --</option>
+                                    @foreach (var sub in SubCategoriasDisponiveis)
+                                    {
+                                        <option value="@sub.Id">@sub.Nome</option>
+                                    }
+                                </select>
+                            </div>
+                        }
                     </div>
+
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Modo de Entrega</label>
                         <InputSelect @bind-Value="produto.ModoEntregaId" class="form-select">
                             <option value="0">-- Selecionar --</option>
-                            @foreach (var m in modos) { <option value="@m.Id">@m.Nome</option> }
+                            @foreach (var m in modos)
+                            {
+                                <option value="@m.Id">@m.Nome</option>
+                            }
                         </InputSelect>
                     </div>
                 </div>
@@ -93,16 +114,62 @@
 
 @code {
     private Produto produto = new();
-    private List<Categoria> categorias = new();
+    private List<Categoria> todasCategorias = new(); // Lista completa para referência
+    private List<Categoria> CategoriasPrincipais = new();
+    private List<Categoria> SubCategoriasDisponiveis = new();
     private List<ModoEntrega> modos = new();
+
+    private int SelectedMainCategoryId;
+    private int SelectedSubCategoryId;
 
     protected override async Task OnInitializedAsync()
     {
-        categorias = await CategoriaService.GetAllAsync();
+        // Carrega todas as categorias e modos
+        todasCategorias = await CategoriaService.GetAllAsync();
         modos = await ModoEntregaService.GetAllAsync();
+
+        // Filtra apenas as categorias principais (sem pai) para o primeiro dropdown
+        CategoriasPrincipais = todasCategorias.Where(c => c.CategoriaPaiId == null).ToList();
 
         produto.MargemLucro = 20;
         produto.Ativo = true;
+    }
+
+    private void OnMainCategoryChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int mainId))
+        {
+            SelectedMainCategoryId = mainId;
+            SelectedSubCategoryId = 0; // Reinicia a subcategoria
+
+            if (mainId > 0)
+            {
+                // Carrega subcategorias da principal selecionada
+                SubCategoriasDisponiveis = todasCategorias
+                    .Where(c => c.CategoriaPaiId == mainId)
+                    .ToList();
+
+                // Define o produto temporariamente na categoria principal
+                produto.CategoriaId = mainId;
+            }
+            else
+            {
+                SubCategoriasDisponiveis.Clear();
+                produto.CategoriaId = 0;
+            }
+        }
+    }
+
+    private void OnSubCategoryChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int subId))
+        {
+            SelectedSubCategoryId = subId;
+
+            // Se tiver escolhido uma subcategoria válida, usa o ID dela
+            // Se escolheu "Nenhuma" (0), mantém o ID da categoria principal
+            produto.CategoriaId = subId > 0 ? subId : SelectedMainCategoryId;
+        }
     }
 
     private async Task UploadImagem(InputFileChangeEventArgs e)
