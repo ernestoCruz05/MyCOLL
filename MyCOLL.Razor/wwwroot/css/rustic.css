@@ -142,8 +142,8 @@ body {
 /* The Poster Card - SMALLER SIZE HERE */
 .category-poster {
     flex: 0 0 auto;
-    width: 180px; /* REDUCED from 220px */
-    height: 270px; /* REDUCED from 320px */
+    width: 180px;
+    height: 270px;
     position: relative;
     border-radius: 12px;
     overflow: hidden;
@@ -188,7 +188,7 @@ body {
 }
 
     .poster-placeholder i {
-        font-size: 3rem; /* Scaled down icon */
+        font-size: 3rem;
     }
 
 /* Text Overlay */
@@ -198,14 +198,14 @@ body {
     left: 0;
     width: 100%;
     background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
-    padding: 40px 10px 15px 10px; /* Adjusted padding */
+    padding: 40px 10px 15px 10px;
     text-align: center;
 }
 
 .poster-title {
     color: #fff;
     font-family: var(--font-display);
-    font-size: 1.15rem; /* Slightly smaller font */
+    font-size: 1.15rem;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -280,7 +280,7 @@ body {
 }
 
 /* ============================================
-   PRODUCT CARD (UPDATED)
+   PRODUCT CARD
    ============================================ */
 .product-card {
     background: var(--parchment);
@@ -301,7 +301,7 @@ body {
     }
 
     .product-card .img-wrapper {
-        height: 200px; /* Reduced from 220px to match smaller vibe */
+        height: 200px;
         overflow: hidden;
         background: var(--rustic-light);
         position: relative;
@@ -395,13 +395,13 @@ body {
 }
 
 /* ============================================
-   RECOMMENDATION BANNER (FLOATING)
+   RECOMMENDATION BANNER
    ============================================ */
 .recommendation-banner {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    width: 280px; /* Largura contida */
+    width: 280px;
     background: var(--parchment);
     border: 2px solid var(--rustic-gold);
     border-radius: 12px;
@@ -412,7 +412,6 @@ body {
     animation: slideUp 0.5s ease-out;
 }
 
-/* Animação de entrada */
 @keyframes slideUp {
     from {
         transform: translateY(100px);
@@ -425,7 +424,6 @@ body {
     }
 }
 
-/* Headerzinho "Recomendado" */
 .rec-header {
     background: var(--rustic-dark);
     color: var(--rustic-gold);
@@ -436,7 +434,6 @@ body {
     letter-spacing: 1px;
 }
 
-/* Botão Fechar */
 .close-rec-btn {
     position: absolute;
     top: 2px;
@@ -454,7 +451,6 @@ body {
         color: #fff;
     }
 
-/* Conteúdo Clicável */
 .rec-content {
     display: flex;
     align-items: center;
@@ -464,10 +460,9 @@ body {
 }
 
     .rec-content:hover {
-        background: rgba(255, 179, 0, 0.1); /* Leve tom dourado */
+        background: rgba(255, 179, 0, 0.1);
     }
 
-/* Imagem Pequena */
 .rec-img-wrapper {
     width: 50px;
     height: 50px;
@@ -488,7 +483,6 @@ body {
         object-fit: cover;
     }
 
-/* Info do Produto */
 .rec-info {
     display: flex;
     flex-direction: column;
@@ -512,12 +506,290 @@ body {
     font-size: 1.1rem;
 }
 
-/* Setinha decorativa */
 .rec-arrow {
     color: var(--rustic-medium);
     font-size: 0.9rem;
     margin-left: 8px;
     opacity: 0.6;
+}
+
+/* ============================================
+   AUTHENTICATION STYLES (Login/Register)
+   ============================================ */
+.auth-wrapper {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.rustic-auth-card {
+    background: var(--parchment);
+    border: 2px solid var(--rustic-medium);
+    border-radius: 8px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 30px rgba(62, 39, 35, 0.4);
+    position: relative;
+    animation: fadeIn 0.5s ease-out;
+}
+
+    .rustic-auth-card.wide {
+        max-width: 500px;
+    }
+
+    /* Efeito de borda dupla decorativa */
+    .rustic-auth-card::before {
+        content: '';
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        right: -5px;
+        bottom: -5px;
+        border: 1px solid var(--rustic-gold);
+        border-radius: 8px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .rustic-auth-card.dashed-border::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        right: 3px;
+        bottom: 3px;
+        border: 1px dashed var(--rustic-medium);
+        opacity: 0.3;
+        border-radius: 6px;
+        pointer-events: none;
+    }
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-icon {
+    font-size: 2.5rem;
+    color: var(--rustic-gold-dark);
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.auth-title {
+    font-family: var(--font-display);
+    color: var(--rustic-dark);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.decorative-line {
+    height: 2px;
+    background: radial-gradient(circle, var(--rustic-gold) 0%, transparent 100%);
+    margin: 10px auto;
+    width: 60%;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.rustic-label {
+    font-family: var(--font-display);
+    color: var(--rustic-medium);
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+    .input-with-icon i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--rustic-medium);
+        opacity: 0.7;
+    }
+
+.rustic-input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    background-color: var(--rustic-lighter);
+    border: 1px solid var(--rustic-medium);
+    border-radius: 4px;
+    font-family: var(--font-main);
+    color: var(--rustic-darker);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+    .rustic-input:focus {
+        outline: none;
+        border-color: var(--rustic-gold);
+        box-shadow: var(--shadow-gold);
+        background-color: #fff;
+    }
+
+.rustic-btn-primary {
+    background: linear-gradient(to bottom, var(--rustic-dark), var(--rustic-darker));
+    color: var(--rustic-gold);
+    border: 1px solid var(--rustic-gold-dark);
+    padding: 12px;
+    border-radius: 4px;
+    font-family: var(--font-display);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    margin-top: 10px;
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+}
+
+    .rustic-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: #fff;
+    }
+
+    .rustic-btn-primary.btn-vendor {
+        border-color: var(--success-color);
+        color: #fff;
+    }
+
+        .rustic-btn-primary.btn-vendor:hover {
+            background: var(--success-color);
+        }
+
+.rustic-alert {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-error {
+    background-color: rgba(198, 40, 40, 0.1);
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+}
+
+.alert-success {
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+}
+
+.auth-footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(93, 64, 55, 0.1);
+    padding-top: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.rustic-link {
+    color: var(--rustic-gold-dark);
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 5px;
+    transition: color 0.2s;
+}
+
+    .rustic-link:hover {
+        color: var(--rustic-dark);
+        text-decoration: underline;
+    }
+
+.validation-msg {
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Custom Checkbox */
+.checkbox-container {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--rustic-dark);
+    user-select: none;
+    margin-bottom: 15px;
+}
+
+    .checkbox-container input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 22px;
+    width: 22px;
+    background-color: var(--rustic-lighter);
+    border: 2px solid var(--rustic-medium);
+    border-radius: 4px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: var(--rustic-gold);
+    border-color: var(--rustic-gold-dark);
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--rustic-darker);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
 }
 
 /* ============================================
@@ -536,7 +808,7 @@ body {
     }
 
     .category-poster {
-        width: 140px; /* Even smaller for mobile */
+        width: 140px;
         height: 210px;
     }
 
