@@ -1,4 +1,7 @@
 @using MyCOLL.UIComponents.Services
+@inject NavigationManager NavManager
+@using Microsoft.AspNetCore.Components.Routing
+@implements IDisposable
 
 <div class="rustic-navbar">
     <!-- Brand Logo -->
@@ -77,7 +80,6 @@
     </div>
 </div>
 
-<!-- Click outside handler -->
 @if (showUserMenu)
 {
     <div class="overlay-backdrop" @onclick="CloseUserMenu"></div>
@@ -132,7 +134,7 @@
 
     private async Task ShowLogin()
     {
-        await OnLoginRequest.InvokeAsync();
+        NavManager.NavigateTo("login");
     }
 
     private async Task GoHome()

@@ -1,0 +1,109 @@
+@page "/register"
+@using MyCOLL.UIComponents.Services
+@inject CollectionApiService ApiService
+@inject NavigationManager NavManager
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-center mb-4">Criar Conta</h3>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success">@successMessage</div>
+                    }
+
+                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="registerModel.Email" class="form-control" />
+                            <ValidationMessage For="@(() => registerModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => registerModel.Password)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Password</label>
+                            <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox @bind-Value="isFornecedor" id="chkFornecedor" class="form-check-input" />
+                            <label class="form-check-label" for="chkFornecedor">
+                                Pretendo vender produtos (Conta Fornecedor)
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            @(isFornecedor ? "Registar como Fornecedor" : "Registar")
+                        </button>
+                    </EditForm>
+
+                    <div class="mt-3 text-center">
+                        <a href="/login" class="text-decoration-none">Já tem conta? Faça login aqui.</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private class RegisterModel
+    {
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required, MinLength(6)] public string Password { get; set; } = "";
+        [Compare(nameof(Password))] public string ConfirmPassword { get; set; } = "";
+    }
+
+    private RegisterModel registerModel = new();
+    private bool isFornecedor = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    private async Task HandleRegister()
+    {
+        errorMessage = "";
+        successMessage = "";
+        AuthResult result;
+
+        if (isFornecedor)
+        {
+            result = await ApiService.RegisterFornecedorAsync(registerModel.Email, registerModel.Password, registerModel.ConfirmPassword);
+        }
+        else
+        {
+            result = await ApiService.RegisterAsync(registerModel.Email, registerModel.Password, registerModel.ConfirmPassword);
+        }
+
+        if (result.Success)
+        {
+            if (isFornecedor)
+            {
+                successMessage = "Conta criada! Aguarde a aprovação do administrador para fazer login.";
+                registerModel = new(); 
+            }
+            else
+            {
+                NavManager.NavigateTo("/login");
+            }
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+    }
+}

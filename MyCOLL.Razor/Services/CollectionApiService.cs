@@ -145,17 +145,43 @@ namespace MyCOLL.UIComponents.Services
             }
         }
 
-        public async Task<AuthResult> RegisterAsync(string nome, string email, string password)
+        public async Task<AuthResult> RegisterAsync(string email, string password, string confirmPassword)
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("api/Auth/register", new { Nome = nome, Email = email, Password = password });
+                var payload = new { Email = email, Password = password, ConfirmPassword = confirmPassword };
+
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/register", payload);
+
                 if (response.IsSuccessStatusCode)
                 {
                     return new AuthResult { Success = true, Message = "Registration successful" };
                 }
+
                 var error = await response.Content.ReadAsStringAsync();
                 return new AuthResult { Success = false, Message = error };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Registration error: {ex.Message}");
+                return new AuthResult { Success = false, Message = "Connection error" };
+            }
+        }
+
+        public async Task<AuthResult> RegisterFornecedorAsync(string email, string password, string confirmPassword)
+        {
+            try
+            {
+                var payload = new { Email = email, Password = password, ConfirmPassword = confirmPassword };
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/register/fornecedor", payload);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return new AuthResult { Success = true, Message = "Registo submetido! Aguarde aprovação." };
+                }
+
+                var error = await response.Content.ReadAsStringAsync();
+                return new AuthResult { Success = false, Message = "Erro no registo de fornecedor." };
             }
             catch (Exception ex)
             {
