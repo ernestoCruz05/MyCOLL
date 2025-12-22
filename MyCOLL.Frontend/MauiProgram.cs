@@ -6,7 +6,7 @@ namespace MyCOLL.Frontend
 {
     public static class MauiProgram
     {
-        private const string DevTunnelUrl = "https://03gjrtqt-7268.uks1.devtunnels.ms";
+        private const string DevTunnelUrl = "https://7rmpdxhc-7268.uks1.devtunnels.ms";
 
         private const bool UseDevTunnel = true;
 

@@ -540,14 +540,14 @@ body {
         max-width: 500px;
     }
 
-    /* Efeito de borda dupla decorativa */
     .rustic-auth-card::before {
         content: '';
         position: absolute;
         top: 5px;
         left: 5px;
-        right: -5px;
-        bottom: -5px;
+        right: 5px; 
+        bottom: 5px; 
+
         border: 1px solid var(--rustic-gold);
         border-radius: 8px;
         pointer-events: none;
@@ -588,13 +588,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     margin: 0;
-}
-
-.decorative-line {
-    height: 2px;
-    background: radial-gradient(circle, var(--rustic-gold) 0%, transparent 100%);
-    margin: 10px auto;
-    width: 60%;
 }
 
 .form-group {
