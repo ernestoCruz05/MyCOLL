@@ -8,10 +8,10 @@ namespace MyCOLL.Frontend
     {
         // Configure your Dev Tunnel URL here
         // NOTE: I removed the extra space you had after "https://"
-        private const string DevTunnelUrl = "https://localhost:7268/";
+        private const string DevTunnelUrl = "https://7rmpdxhc-7268.uks1.devtunnels.ms";
 
         // Set to true to use the Tunnel (works for Android, iOS, and Windows)
-        private const bool UseDevTunnel = false;
+        private const bool UseDevTunnel = true;
 
         public static MauiApp CreateMauiApp()
         {
@@ -82,7 +82,16 @@ namespace MyCOLL.Frontend
 });
 #endif
 
-return builder.Build();
+#if ANDROID
+            // CORREÇÃO: Usar 'BlazorWebViewMapper' em vez de 'Mapper'
+            Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewHandler.BlazorWebViewMapper.AppendToMapping("BlazorWebViewMixedContent", (handler, view) =>
+            {
+                // Acede ao controlo nativo Android (WebView) e ativa o modo Mixed Content
+                handler.PlatformView.Settings.MixedContentMode = Android.Webkit.MixedContentHandling.AlwaysAllow;
+            });
+#endif
+
+            return builder.Build();
         }
 
         private static string GetApiBaseUrl()
