@@ -362,4 +362,3 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /MyCOLL/wwwroot/uploads
-/MyCOLL.Frontend/MauiProgram.cs
