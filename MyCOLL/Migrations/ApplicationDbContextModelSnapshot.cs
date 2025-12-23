@@ -416,9 +416,6 @@ namespace MyCOLL.Migrations
                     b.Property<int>("CategoriaId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("DataAdicao")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("DataAtualizacao")
                         .HasColumnType("datetime2");
 
