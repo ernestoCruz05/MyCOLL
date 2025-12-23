@@ -22,7 +22,6 @@ namespace MyCOLL.Data
                     await roleManager.CreateAsync(new IdentityRole(role));
             }
 
-
             // criar admin default
             if (await userManager.FindByEmailAsync("admin@mycoll.pt") == null)
             {

@@ -1,4 +1,4 @@
-﻿using MyCOLL.UIComponents.Models; 
+﻿using MyCOLL.UIComponents.Models;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Forms;
@@ -9,10 +9,29 @@ namespace MyCOLL.UIComponents.Services
     public class CollectionApiService
     {
         private readonly HttpClient _httpClient;
+        private readonly UserService _userService; // <--- 1. Referência ao UserService
 
-        public CollectionApiService(HttpClient httpClient)
+        // 2. Injeção do UserService no construtor
+        public CollectionApiService(HttpClient httpClient, UserService userService)
         {
             _httpClient = httpClient;
+            _userService = userService;
+        }
+
+        /// <summary>
+        /// Método auxiliar para anexar o Token JWT aos pedidos
+        /// </summary>
+        private void SetAuthorizationHeader()
+        {
+            if (_userService.IsLoggedIn && _userService.CurrentUser != null && !string.IsNullOrEmpty(_userService.CurrentUser.Token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", _userService.CurrentUser.Token);
+            }
+            else
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = null;
+            }
         }
 
         /// <summary>
@@ -86,6 +105,7 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
+                SetAuthorizationHeader(); // <--- Requer autenticação
                 var response = await _httpClient.DeleteAsync($"api/Produtos/{id}");
                 return response.IsSuccessStatusCode;
             }
@@ -136,6 +156,7 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
+                SetAuthorizationHeader(); // <--- Requer autenticação
                 var products = await _httpClient.GetFromJsonAsync<List<Produto>>("api/Produtos/meus") ?? new();
                 foreach (var p in products) FixImageUrl(p);
                 return products;
@@ -147,18 +168,26 @@ namespace MyCOLL.UIComponents.Services
             }
         }
 
-
-        public async Task<bool> CreateProductAsync(ProdutoCreateDto produto)
+        public async Task<string?> CreateProductAsync(ProdutoCreateDto produto)
         {
             try
             {
+                SetAuthorizationHeader(); // <--- Requer autenticação (Corrige o 401 Unauthorized)
+
                 var response = await _httpClient.PostAsJsonAsync("api/Produtos", produto);
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                var errorDetail = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Error: {errorDetail}");
+                return $"Erro na API: {response.StatusCode} - {errorDetail}";
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error creating product: {ex.Message}");
-                return false;
+                return $"Erro de conexão: {ex.Message}";
             }
         }
 
@@ -166,6 +195,8 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
+                SetAuthorizationHeader(); // <--- Requer autenticação (Corrige o upload falhado)
+
                 long maxFileSize = 1024 * 1024 * 5;
 
                 using var content = new MultipartFormDataContent();
@@ -179,8 +210,14 @@ namespace MyCOLL.UIComponents.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<UploadResult>();
-                    // Tenta ler ImageUrl (novo padrão) ou Url (fallback)
-                    return result?.ImageUrl ?? result?.Url;
+
+                    // Constrói o URL completo para exibir na app imediatamente
+                    string? partialUrl = result?.ImageUrl ?? result?.Url;
+                    if (!string.IsNullOrEmpty(partialUrl))
+                    {
+                        // Garante que devolve o URL absoluto para o frontend conseguir mostrar a pré-visualização
+                        return $"{GetBaseUrl().TrimEnd('/')}{partialUrl}";
+                    }
                 }
                 return null;
             }
@@ -199,6 +236,7 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
+                // Login é anónimo, não precisa de header
                 var response = await _httpClient.PostAsJsonAsync("api/Auth/login", new { Email = email, Password = password });
                 if (response.IsSuccessStatusCode)
                 {
@@ -267,6 +305,8 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
+                SetAuthorizationHeader(); // <--- Requer autenticação (Geralmente criar encomenda exige login)
+
                 var response = await _httpClient.PostAsJsonAsync("api/Encomenda", order);
                 if (response.IsSuccessStatusCode)
                 {
@@ -285,7 +325,8 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<List<ModoEntrega>>("api/ModoEntrega") ?? new();
+                // URL corrigido para plural
+                return await _httpClient.GetFromJsonAsync<List<ModoEntrega>>("api/ModosEntrega") ?? new();
             }
             catch (Exception ex)
             {

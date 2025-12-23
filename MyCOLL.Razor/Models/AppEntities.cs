@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MyCOLL.UIComponents.Models
 {
@@ -54,12 +55,23 @@ namespace MyCOLL.UIComponents.Models
 
     public class ProdutoCreateDto
     {
+        [Required(ErrorMessage = "O Nome é obrigatório.")]
         public string Nome { get; set; } = string.Empty;
+
         public string Descricao { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "O Preço é obrigatório.")]
+        [Range(0.01, 999999, ErrorMessage = "O Preço deve ser superior a 0.")]
         public decimal PrecoBase { get; set; }
+
+        [Required(ErrorMessage = "O Stock é obrigatório.")]
+        [Range(0, 99999, ErrorMessage = "O Stock não pode ser negativo.")]
         public int Stock { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Selecione uma categoria.")]
         public int CategoriaId { get; set; }
 
+        [Required(ErrorMessage = "O Modo de Entrega é obrigatório.")]
         public int? ModoEntregaId { get; set; }
 
         public string ImagemUrl { get; set; } = string.Empty;

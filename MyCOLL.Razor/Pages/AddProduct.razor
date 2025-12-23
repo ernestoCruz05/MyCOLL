@@ -2,14 +2,13 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using MyCOLL.UIComponents.Services
-@using MyCOLL.UIComponents.Models  @* <--- Garante que usa os Models globais *@
+@using MyCOLL.UIComponents.Models  
 @attribute [Authorize(Roles = "Fornecedor")]
 @inject CollectionApiService ApiService
 @inject NavigationManager Navigation
 
 <div class="rustic-page-wrapper">
 
-    @* --- CABEÇALHO --- *@
     <div class="rustic-header-bar">
         <a href="my-products" class="rustic-back-btn">
             <i class="bi bi-arrow-left"></i> Cancelar
@@ -56,10 +55,12 @@
                                 <div class="col-6 mb-2">
                                     <label class="form-label-rustic" style="font-size: 0.9rem;">Preço (€)</label>
                                     <InputNumber class="form-control-rustic py-1" @bind-Value="Produto.PrecoBase" />
+                                    <ValidationMessage For="@(() => Produto.PrecoBase)" />
                                 </div>
                                 <div class="col-6 mb-2">
                                     <label class="form-label-rustic" style="font-size: 0.9rem;">Stock</label>
                                     <InputNumber class="form-control-rustic py-1" @bind-Value="Produto.Stock" />
+                                    <ValidationMessage For="@(() => Produto.Stock)" />
                                 </div>
                             </div>
                         </div>
@@ -92,14 +93,15 @@
                                 }
 
                                 <div class="mb-1">
-                                    <label class="form-label-rustic text-muted" style="font-size: 0.85rem;">Entrega (Opcional)</label>
+                                    <label class="form-label-rustic" style="font-size: 0.85rem;">Modo de Entrega</label>
                                     <InputSelect class="form-control-rustic py-1" style="font-size: 0.9rem;" @bind-Value="Produto.ModoEntregaId">
-                                        <option value="">- Nenhuma Selecionada -</option>
+                                        <option value="">- Selecione -</option>
                                         @foreach (var modo in ModosEntrega)
                                         {
                                             <option value="@modo.Id">@modo.Nome</option>
                                         }
                                     </InputSelect>
+                                    <ValidationMessage For="@(() => Produto.ModoEntregaId)" />
                                 </div>
                             </div>
 
@@ -146,8 +148,6 @@
 </div>
 
 @code {
-    // --- SEM CLASSES DEFINIDAS AQUI ---
-    // Usamos as classes que vêm de MyCOLL.UIComponents.Models
 
     private ProdutoCreateDto Produto = new();
 
@@ -208,9 +208,21 @@
 
     private async Task HandleSubmit()
     {
-        if (Produto.CategoriaId == 0) { errorMessage = "Selecione uma categoria."; return; }
+        if (Produto.CategoriaId == 0)
+        {
+            errorMessage = "Selecione uma categoria.";
+            return;
+        }
 
-        if (await ApiService.CreateProductAsync(Produto)) Navigation.NavigateTo("my-products");
-        else errorMessage = "Erro ao criar produto.";
+        var erro = await ApiService.CreateProductAsync(Produto);
+
+        if (erro == null)
+        {
+            Navigation.NavigateTo("my-products");
+        }
+        else
+        {
+            errorMessage = erro;
+        }
     }
 }
