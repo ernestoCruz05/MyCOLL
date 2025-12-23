@@ -103,19 +103,24 @@ namespace MyCOLL.API.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isFornecedor = User.IsInRole("Fornecedor");
 
+            // Lógica RN: Se for fornecedor, a margem inicial é 0.
+            decimal margem = isFornecedor ? 0 : dto.MargemLucro;
+
             var produto = new Produto
             {
                 Nome = dto.Nome,
                 Descricao = dto.Descricao,
                 PrecoBase = dto.PrecoBase,
-                MargemLucro = dto.MargemLucro,
-                Preco = dto.PrecoBase + (dto.PrecoBase * (dto.MargemLucro / 100)),
+                MargemLucro = margem,
+                // Calcula o preço final com base na margem definida
+                Preco = dto.PrecoBase + (dto.PrecoBase * (margem / 100)),
                 Stock = dto.Stock,
                 CategoriaId = dto.CategoriaId,
                 ModoEntregaId = dto.ModoEntregaId,
                 ImagemUrl = dto.ImagemUrl,
                 FornecedorId = isFornecedor ? userId : null,
-                Ativo = !isFornecedor, // Fornecedor fica pendente (RN01)
+                // RN01: Se for fornecedor, o produto entra como Inativo (Pendente)
+                Ativo = !isFornecedor,
                 DataCriacao = DateTime.Now
             };
 
@@ -124,8 +129,8 @@ namespace MyCOLL.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = produto.Id }, new
             {
                 id = produto.Id,
-                message = isFornecedor 
-                    ? "Produto submetido! Aguarde aprovação do administrador." 
+                message = isFornecedor
+                    ? "Produto submetido! Aguarde aprovação do administrador."
                     : "Produto criado com sucesso!"
             });
         }
@@ -146,25 +151,52 @@ namespace MyCOLL.API.Controllers
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isAdmin = User.IsInRole("Admin") || User.IsInRole("Gestor");
+            var isFornecedor = User.IsInRole("Fornecedor");
 
-            // Verificar se é o dono ou admin
+            // Segurança: Apenas dono ou admin podem editar
             if (!isAdmin && produtoExistente.FornecedorId != userId)
                 return Forbid();
 
+            // Atualização dos campos comuns
             produtoExistente.Nome = dto.Nome;
             produtoExistente.Descricao = dto.Descricao;
             produtoExistente.PrecoBase = dto.PrecoBase;
-            produtoExistente.MargemLucro = dto.MargemLucro;
-            produtoExistente.Preco = dto.PrecoBase + (dto.PrecoBase * (dto.MargemLucro / 100));
             produtoExistente.Stock = dto.Stock;
             produtoExistente.CategoriaId = dto.CategoriaId;
             produtoExistente.ModoEntregaId = dto.ModoEntregaId;
             produtoExistente.ImagemUrl = dto.ImagemUrl;
             produtoExistente.DataAtualizacao = DateTime.Now;
 
+            // Lógica RN: Diferença entre Fornecedor e Admin na atualização
+            if (isFornecedor)
+            {
+                // RN: Se o fornecedor edita, o produto volta a ficar Pendente (Inativo) para re-validação
+                produtoExistente.Ativo = false;
+
+                // O fornecedor NÃO altera a Margem de Lucro diretamente.
+                // Mantém a margem que o Admin já tinha definido (ou 0 se ainda não definido)
+                // Recalcula o Preço Final com o novo Preço Base + Margem existente
+                produtoExistente.Preco = produtoExistente.PrecoBase + (produtoExistente.PrecoBase * (produtoExistente.MargemLucro / 100));
+            }
+            else
+            {
+                // Se for Admin/Gestor, pode alterar a Margem de Lucro
+                produtoExistente.MargemLucro = dto.MargemLucro;
+
+                // Recalcula o Preço Final com a nova Margem
+                produtoExistente.Preco = produtoExistente.PrecoBase + (produtoExistente.PrecoBase * (dto.MargemLucro / 100));
+
+                // Nota: O Admin gere o estado Ativo/Inativo através do endpoint ToggleAtivo ou pode manter o estado atual aqui.
+            }
+
             await _repository.UpdateAsync(produtoExistente);
 
-            return Ok(new { message = "Produto atualizado com sucesso!" });
+            return Ok(new
+            {
+                message = isFornecedor
+                    ? "Produto atualizado e submetido para aprovação."
+                    : "Produto atualizado com sucesso!"
+            });
         }
 
         /// <summary>
@@ -205,7 +237,8 @@ namespace MyCOLL.API.Controllers
 
             await _repository.UpdateAsync(produto);
 
-            return Ok(new { 
+            return Ok(new
+            {
                 message = produto.Ativo ? "Produto ativado!" : "Produto desativado!",
                 ativo = produto.Ativo
             });

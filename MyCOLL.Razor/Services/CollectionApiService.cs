@@ -1,6 +1,8 @@
-﻿using MyCOLL.UIComponents.Models;
+﻿using MyCOLL.UIComponents.Models; 
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components.Forms;
+using System.Net.Http.Headers;
 
 namespace MyCOLL.UIComponents.Services
 {
@@ -38,8 +40,6 @@ namespace MyCOLL.UIComponents.Services
 
         #endregion
 
-
-
         #region Products
 
         private void FixImageUrl(Produto p)
@@ -71,7 +71,6 @@ namespace MyCOLL.UIComponents.Services
 
                 var products = await _httpClient.GetFromJsonAsync<List<Produto>>(url) ?? new();
 
-                // FIX: Update URLs for all products
                 foreach (var p in products) FixImageUrl(p);
 
                 return products;
@@ -80,6 +79,20 @@ namespace MyCOLL.UIComponents.Services
             {
                 Console.WriteLine($"Error: {ex.Message}");
                 return new List<Produto>();
+            }
+        }
+
+        public async Task<bool> DeleteProductAsync(int id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/Produtos/{id}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting product: {ex.Message}");
+                return false;
             }
         }
 
@@ -102,10 +115,7 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                // Since this calls GetProductsAsync internally, it might already be fixed if you updated that method.
-                // But if you filter manually inside this method as shown in your code:
-
-                var allProducts = await GetProductsAsync(); // This now returns fixed URLs
+                var allProducts = await GetProductsAsync();
 
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return allProducts;
@@ -119,6 +129,65 @@ namespace MyCOLL.UIComponents.Services
             {
                 Console.WriteLine($"Error searching products: {ex.Message}");
                 return new List<Produto>();
+            }
+        }
+
+        public async Task<List<Produto>> GetMyProductsAsync()
+        {
+            try
+            {
+                var products = await _httpClient.GetFromJsonAsync<List<Produto>>("api/Produtos/meus") ?? new();
+                foreach (var p in products) FixImageUrl(p);
+                return products;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching my products: {ex.Message}");
+                return new List<Produto>();
+            }
+        }
+
+
+        public async Task<bool> CreateProductAsync(ProdutoCreateDto produto)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Produtos", produto);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating product: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<string?> UploadImageAsync(IBrowserFile file)
+        {
+            try
+            {
+                long maxFileSize = 1024 * 1024 * 5;
+
+                using var content = new MultipartFormDataContent();
+                using var fileContent = new StreamContent(file.OpenReadStream(maxFileSize));
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+
+                content.Add(fileContent, "file", file.Name);
+
+                var response = await _httpClient.PostAsync("api/Upload/produto", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<UploadResult>();
+                    // Tenta ler ImageUrl (novo padrão) ou Url (fallback)
+                    return result?.ImageUrl ?? result?.Url;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Upload error: {ex.Message}");
+                return null;
             }
         }
 
@@ -242,6 +311,12 @@ namespace MyCOLL.UIComponents.Services
         public string? Token { get; set; }
     }
 
+    public class UploadResult
+    {
+        public string? ImageUrl { get; set; }
+        public string? Url { get; set; }
+    }
+
     public class OrderResult
     {
         public bool Success { get; set; }
@@ -259,14 +334,6 @@ namespace MyCOLL.UIComponents.Services
     {
         public int ProdutoId { get; set; }
         public int Quantidade { get; set; }
-    }
-
-    public class ModoEntrega
-    {
-        public int Id { get; set; }
-        public string Nome { get; set; } = string.Empty;
-        public decimal Preco { get; set; }
-        public string? Descricao { get; set; }
     }
 
     #endregion

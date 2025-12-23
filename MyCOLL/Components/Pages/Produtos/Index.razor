@@ -63,7 +63,7 @@
                         <th>PREÇO</th>
                         <th>STOCK</th>
                         <th class="text-center">ESTADO</th>
-                        <th class="text-center">AÇÕES</th>
+                        <th class="text-center" style="min-width: 200px;">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,7 +79,7 @@
                     {
                         @foreach (var item in produtosFiltrados)
                         {
-                            <tr>
+                            <tr class="@(!item.Ativo ? "table-warning" : "")">
                                 <td>
                                     @if (!string.IsNullOrEmpty(item.ImagemUrl))
                                     {
@@ -92,7 +92,16 @@
                                         </div>
                                     }
                                 </td>
-                                <td class="fw-semibold">@item.Nome</td>
+                                <td class="fw-semibold">
+                                    @item.Nome
+                                    @if (!string.IsNullOrEmpty(item.FornecedorId))
+                                    {
+                                        <br />
+                                        <small class="text-muted fw-normal" style="font-size: 0.75rem">
+                                            <i class="bi bi-person"></i> @(item.Fornecedor?.UserName ?? "Fornecedor")
+                                        </small>
+                                    }
+                                </td>
 
                                 <td>
                                     @if (item.Categoria != null)
@@ -114,7 +123,18 @@
                                     }
                                 </td>
 
-                                <td>@item.Preco.ToString("C2")</td>
+                                <td>
+                                    @if (item.Ativo)
+                                    {
+                                        @item.Preco.ToString("C2")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" title="Preço Base: @item.PrecoBase.ToString("C2")">
+                                            @item.PrecoBase.ToString("C2") <small>(Base)</small>
+                                        </span>
+                                    }
+                                </td>
                                 <td>
                                     @if (item.Stock < 5)
                                     {
@@ -136,6 +156,13 @@
                                     }
                                 </td>
                                 <td class="text-center">
+                                    @if (!item.Ativo)
+                                    {
+                                        <a href="/produtos/editar/@item.Id" class="btn btn-sm btn-success me-1 shadow-sm" title="Rever e Ativar">
+                                            <i class="bi bi-check-lg"></i> Ativar
+                                        </a>
+                                    }
+
                                     <a href="/produtos/editar/@item.Id" class="btn btn-sm btn-outline-secondary me-1">
                                         Editar
                                     </a>

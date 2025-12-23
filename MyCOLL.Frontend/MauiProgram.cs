@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using MyCOLL.UIComponents.Services;
-
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace MyCOLL.Frontend
 {
     public static class MauiProgram
     {
-        private const string DevTunnelUrl = "https://7rmpdxhc-7268.uks1.devtunnels.ms";
-
+        private const string DevTunnelUrl = "https://7rmpdxhc-7268.uks1.devtunnels.ms/";
         private const bool UseDevTunnel = true;
 
         public static MauiApp CreateMauiApp()
@@ -21,17 +20,11 @@ namespace MyCOLL.Frontend
                 });
 
             string baseUrl = GetApiBaseUrl();
-
-
-
-
             Console.WriteLine($"🔗 API Base URL: {baseUrl}");
 
             builder.Services.AddScoped(sp =>
             {
-
                 var handler = new HttpClientHandler();
-
                 handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
 
                 var client = new HttpClient(handler)
@@ -41,33 +34,33 @@ namespace MyCOLL.Frontend
                 };
 
                 client.DefaultRequestHeaders.Add("X-Tunnel-Skip-AntiPhishing-Page", "true");
-
                 client.DefaultRequestHeaders.Add("User-Agent", "MyCOLL-Mobile-App");
 
-                Console.WriteLine($"📡 HttpClient configured for: {client.BaseAddress}");
                 return client;
             });
 
             builder.Services.AddScoped<CollectionApiService>();
             builder.Services.AddSingleton<CartService>();
-            builder.Services.AddSingleton<UserService>();
+
+            builder.Services.AddScoped<UserService>();
+            builder.Services.AddAuthorizationCore();
+            builder.Services.AddScoped<CustomAuthStateProvider>();
+            builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 
             builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
-
             builder.Logging.AddDebug();
 #endif
 
 #if WINDOWS
             Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("BlazorWebView", (handler, view) =>
             {
-                // This allows the WebView to load HTTP images on Windows
                 if (handler.PlatformView.CoreWebView2 != null)
                 {
                     handler.PlatformView.CoreWebView2.Settings.IsWebMessageEnabled = true;
                 }
-});
+            });
 #endif
 
 #if ANDROID
@@ -81,24 +74,24 @@ namespace MyCOLL.Frontend
         }
 
         private static string GetApiBaseUrl()
-{
-    if (UseDevTunnel)
-    {
-        Console.WriteLine("🌐 Using Dev Tunnel configuration");
-        return DevTunnelUrl;
-    }
+        {
+            if (UseDevTunnel)
+            {
+                Console.WriteLine("🌐 Using Dev Tunnel configuration");
+                return DevTunnelUrl;
+            }
 
-    var baseUrl = DeviceInfo.Platform switch
-    {
-        var p when p == DevicePlatform.Android => "http://10.0.2.2:5225/",
-        var p when p == DevicePlatform.iOS => "http://localhost:5225/",
-        var p when p == DevicePlatform.MacCatalyst => "http://localhost:5225/",
-        var p when p == DevicePlatform.WinUI => "http://localhost:5225/",
-        _ => "http://localhost:5225/"
-    };
+            var baseUrl = DeviceInfo.Platform switch
+            {
+                var p when p == DevicePlatform.Android => "http://10.0.2.2:5225/",
+                var p when p == DevicePlatform.iOS => "http://localhost:5225/",
+                var p when p == DevicePlatform.MacCatalyst => "http://localhost:5225/",
+                var p when p == DevicePlatform.WinUI => "http://localhost:5225/",
+                _ => "http://localhost:5225/"
+            };
 
-    Console.WriteLine($"📱 Local Platform URL: {baseUrl}");
-    return baseUrl;
-}
+            Console.WriteLine($"📱 Local Platform URL: {baseUrl}");
+            return baseUrl;
+        }
     }
 }

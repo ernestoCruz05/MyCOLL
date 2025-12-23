@@ -1,5 +1,7 @@
 @page "/login"
 @using MyCOLL.UIComponents.Services
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
 @inject CollectionApiService ApiService
 @inject UserService UserService
 @inject NavigationManager NavManager
@@ -75,14 +77,51 @@
         errorMessage = "";
         var result = await ApiService.LoginAsync(loginModel.Email, loginModel.Password);
 
-        if (result.Success)
+        if (result.Success && !string.IsNullOrEmpty(result.Token))
         {
-            UserService.SetUser("userId_placeholder", loginModel.Email, loginModel.Email, result.Token);
+            // Extrair o Role do Token
+            var role = GetRoleFromToken(result.Token);
+            var name = GetNameFromToken(result.Token) ?? loginModel.Email;
+
+            // Agora passamos o Role correto!
+            UserService.SetUser("userId_placeholder", name, loginModel.Email, role, result.Token);
+
             NavManager.NavigateTo("/");
         }
         else
         {
             errorMessage = result.Message;
+        }
+    }
+
+    private string GetRoleFromToken(string token)
+    {
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role || c.Type == "role");
+            return roleClaim?.Value ?? "Cliente";
+        }
+        catch
+        {
+            return "Cliente";
+        }
+    }
+
+    private string? GetNameFromToken(string token)
+    {
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            // Tenta obter o nome único ou o claim "name"
+            var nameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "unique_name" || c.Type == ClaimTypes.Name);
+            return nameClaim?.Value;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

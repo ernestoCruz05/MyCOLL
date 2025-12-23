@@ -1,0 +1,216 @@
+@page "/my-products/add"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using MyCOLL.UIComponents.Services
+@using MyCOLL.UIComponents.Models  @* <--- Garante que usa os Models globais *@
+@attribute [Authorize(Roles = "Fornecedor")]
+@inject CollectionApiService ApiService
+@inject NavigationManager Navigation
+
+<div class="rustic-page-wrapper">
+
+    @* --- CABEÇALHO --- *@
+    <div class="rustic-header-bar">
+        <a href="my-products" class="rustic-back-btn">
+            <i class="bi bi-arrow-left"></i> Cancelar
+        </a>
+
+        <div class="d-flex align-items-baseline">
+            <span class="header-brand">MyCOLL</span>
+            <span class="header-subtitle">Registar Produto</span>
+        </div>
+
+        <div style="width: 100px;"></div>
+    </div>
+
+    <div class="rustic-content-container container d-flex justify-content-center">
+
+        <div class="rustic-form-card compact w-100">
+            <div class="rustic-form-header py-2 px-3">
+                <h5 class="m-0" style="font-size: 1.1rem;"><i class="bi bi-feather me-2"></i>Detalhes do Produto</h5>
+            </div>
+
+            <div class="rustic-form-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger py-2 mb-3 small">@errorMessage</div>
+                }
+
+                <EditForm Model="Produto" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="row gx-3">
+                        <div class="col-md-7 border-end pe-3">
+                            <div class="mb-2">
+                                <label class="form-label-rustic" style="font-size: 0.9rem;">Nome</label>
+                                <InputText class="form-control-rustic py-1" @bind-Value="Produto.Nome" />
+                                <ValidationMessage For="@(() => Produto.Nome)" />
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label-rustic" style="font-size: 0.9rem;">Descrição</label>
+                                <InputTextArea class="form-control-rustic py-1" @bind-Value="Produto.Descricao" rows="4" style="resize: none;" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <label class="form-label-rustic" style="font-size: 0.9rem;">Preço (€)</label>
+                                    <InputNumber class="form-control-rustic py-1" @bind-Value="Produto.PrecoBase" />
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label-rustic" style="font-size: 0.9rem;">Stock</label>
+                                    <InputNumber class="form-control-rustic py-1" @bind-Value="Produto.Stock" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5 ps-3">
+                            <div class="p-2 mb-3 rounded" style="background-color: var(--parchment); border: 1px dashed var(--rustic-medium);">
+                                <div class="mb-2">
+                                    <label class="form-label-rustic" style="font-size: 0.85rem;">Categoria</label>
+                                    <select class="form-control-rustic py-1" style="font-size: 0.9rem;" value="@SelectedMainCategoryId" @onchange="OnMainCategoryChange">
+                                        <option value="0">- Selecione -</option>
+                                        @foreach (var cat in MainCategories)
+                                        {
+                                            <option value="@cat.Id">@cat.Nome</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                @if (SubCategories.Any())
+                                {
+                                    <div class="mb-2 fade-in">
+                                        <label class="form-label-rustic" style="font-size: 0.85rem;">Subcategoria</label>
+                                        <select class="form-control-rustic py-1" style="font-size: 0.9rem;" value="@SelectedSubCategoryId" @onchange="OnSubCategoryChange">
+                                            <option value="0">- Nenhuma -</option>
+                                            @foreach (var sub in SubCategories)
+                                            {
+                                                <option value="@sub.Id">@sub.Nome</option>
+                                            }
+                                        </select>
+                                    </div>
+                                }
+
+                                <div class="mb-1">
+                                    <label class="form-label-rustic text-muted" style="font-size: 0.85rem;">Entrega (Opcional)</label>
+                                    <InputSelect class="form-control-rustic py-1" style="font-size: 0.9rem;" @bind-Value="Produto.ModoEntregaId">
+                                        <option value="">- Nenhuma Selecionada -</option>
+                                        @foreach (var modo in ModosEntrega)
+                                        {
+                                            <option value="@modo.Id">@modo.Nome</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label-rustic" style="font-size: 0.9rem;">Imagem</label>
+                                <InputFile OnChange="HandleFileSelected" class="form-control form-control-sm" accept="image/*" />
+
+                                <div class="mt-2 text-center border rounded bg-white d-flex align-items-center justify-content-center" style="height: 100px;">
+                                    @if (isUploading)
+                                    {
+                                        <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+                                    }
+                                    else if (!string.IsNullOrEmpty(Produto.ImagemUrl))
+                                    {
+                                        <img src="@Produto.ImagemUrl" style="max-height: 90px; max-width: 100%; object-fit: contain;" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small"><i class="bi bi-image"></i> Sem imagem</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end pt-2 mt-2 border-top">
+                        <button type="submit" class="rustic-btn-primary px-4 py-1 shadow-sm" disabled="@isUploading">
+                            @if (isUploading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            else
+                            {
+
+                                <i class="bi bi-check2-circle me-2"></i>
+                            }
+                            Guardar
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // --- SEM CLASSES DEFINIDAS AQUI ---
+    // Usamos as classes que vêm de MyCOLL.UIComponents.Models
+
+    private ProdutoCreateDto Produto = new();
+
+    private List<Categoria> AllCategories = new();
+    private List<Categoria> MainCategories = new();
+    private List<Categoria> SubCategories = new();
+    private List<ModoEntrega> ModosEntrega = new();
+
+    private int SelectedMainCategoryId = 0;
+    private int SelectedSubCategoryId = 0;
+
+    private string errorMessage = "";
+    private bool isUploading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            AllCategories = await ApiService.GetCategoriesAsync();
+            ModosEntrega = await ApiService.GetDeliveryModesAsync();
+
+            MainCategories = AllCategories.Where(c => c.CategoriaPaiId == null || c.CategoriaPaiId == 0).ToList();
+        }
+        catch (Exception ex) { errorMessage = "Erro: " + ex.Message; }
+    }
+
+    private void OnMainCategoryChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id))
+        {
+            SelectedMainCategoryId = id;
+            SelectedSubCategoryId = 0;
+            SubCategories = AllCategories.Where(c => c.CategoriaPaiId == id).ToList();
+            Produto.CategoriaId = id;
+        }
+    }
+
+    private void OnSubCategoryChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id))
+        {
+            SelectedSubCategoryId = id;
+            Produto.CategoriaId = (id > 0) ? id : SelectedMainCategoryId;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        isUploading = true;
+        try
+        {
+            var uploadedUrl = await ApiService.UploadImageAsync(e.File);
+            if (!string.IsNullOrEmpty(uploadedUrl)) Produto.ImagemUrl = uploadedUrl;
+        }
+        catch { errorMessage = "Falha no upload."; }
+        finally { isUploading = false; }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Produto.CategoriaId == 0) { errorMessage = "Selecione uma categoria."; return; }
+
+        if (await ApiService.CreateProductAsync(Produto)) Navigation.NavigateTo("my-products");
+        else errorMessage = "Erro ao criar produto.";
+    }
+}

@@ -15,9 +15,10 @@ namespace MyCOLL.API.DTOs
         [Range(0.01, 999999, ErrorMessage = "Preço base deve ser maior que 0")]
         public decimal PrecoBase { get; set; }
 
-        [Required(ErrorMessage = "Margem de lucro é obrigatória")]
+
         [Range(0, 1000, ErrorMessage = "Margem de lucro deve ser entre 0 e 1000%")]
-        public decimal MargemLucro { get; set; }
+        public decimal MargemLucro { get; set; } = 0; 
+        // deve ser alterada atraves de edicao por parte do gestor
 
         [Required(ErrorMessage = "Stock é obrigatório")]
         [Range(0, 99999, ErrorMessage = "Stock deve ser entre 0 e 99999")]
@@ -32,33 +33,9 @@ namespace MyCOLL.API.DTOs
         public string? ImagemUrl { get; set; }
     }
 
-    public class ProdutoUpdateDto
+    public class ProdutoUpdateDto : ProdutoCreateDto
     {
-        [Required(ErrorMessage = "Nome é obrigatório")]
-        [StringLength(120, MinimumLength = 3)]
-        public string Nome { get; set; } = string.Empty;
-
-        [StringLength(500)]
-        public string? Descricao { get; set; }
-
-        [Required]
-        [Range(0.01, 999999)]
-        public decimal PrecoBase { get; set; }
-
-        [Required]
-        [Range(0, 1000)]
-        public decimal MargemLucro { get; set; }
-
-        [Required]
-        [Range(0, 99999)]
-        public int Stock { get; set; }
-
-        [Required]
-        public int CategoriaId { get; set; }
-
-        [Required]
-        public int ModoEntregaId { get; set; }
-
-        public string? ImagemUrl { get; set; }
+        // Podemos herdar do Create para evitar duplicação, 
+        // ou manter separado se preferir, mas remova o [Required] da MargemLucro aqui também.
     }
 }

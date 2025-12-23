@@ -1,0 +1,112 @@
+@page "/my-products"
+@using Microsoft.AspNetCore.Authorization
+@using MyCOLL.UIComponents.Models
+@using MyCOLL.UIComponents.Services
+@attribute [Authorize(Roles = "Fornecedor")]
+@inject CollectionApiService ApiService
+@inject NavigationManager Navigation
+
+<div class="rustic-page-wrapper">
+
+
+    <div class="rustic-header-bar">
+        <a href="/" class="rustic-back-btn">
+            <i class="bi bi-arrow-left"></i> Voltar à Loja
+        </a>
+
+        <div class="d-flex align-items-baseline">
+            <span class="header-brand">MyCOLL</span>
+            <span class="header-subtitle">Arquivo Pessoal</span>
+        </div>
+
+        <div style="width: 130px;"></div>
+    </div>
+
+
+    <div class="rustic-content-container container">
+
+        @if (isLoading)
+        {
+            <div class="d-flex justify-content-center py-5">
+                <div class="spinner-border text-warning" style="width: 3rem; height: 3rem;" role="status"></div>
+            </div>
+        }
+        else
+        {
+            <div class="product-grid">
+                <a href="my-products/add" class="add-product-card text-decoration-none">
+                    <div class="add-icon-wrapper">
+                        <i class="bi bi-plus-circle-dotted"></i>
+                    </div>
+                    <span class="add-text">Adicionar Produto</span>
+                </a>
+
+                @foreach (var item in Produtos)
+                {
+                    <div class="rustic-card">
+                        <div class="card-img-wrapper">
+                            <img src="@(string.IsNullOrEmpty(item.ImagemUrl) ? "/images/no-image.png" : item.ImagemUrl)" alt="@item.Nome">
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge @(item.Ativo ? "bg-success" : "bg-warning text-dark") shadow-sm">
+                                    @(item.Ativo ? "Visível" : "Pendente")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-content">
+                            <h5 class="card-title" title="@item.Nome">@item.Nome</h5>
+
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.85rem;">
+                                        <i class="bi bi-tag-fill me-1" style="color:var(--rustic-gold);"></i>
+                                        @item.Categoria?.Nome
+                                    </small>
+                                    <span class="card-price">@item.PrecoBase.ToString("C")</span>
+                                </div>
+
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item.Id)" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Produto> Produtos = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            isLoading = true;
+            Produtos = await ApiService.GetMyProductsAsync();
+        }
+        catch
+        {
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Delete(int id)
+    {
+        if (await ApiService.DeleteProductAsync(id))
+        {
+            await LoadProducts();
+        }
+    }
+}

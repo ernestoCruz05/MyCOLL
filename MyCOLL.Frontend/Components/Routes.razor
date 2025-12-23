@@ -1,9 +1,29 @@
 ﻿@using MyCOLL.UIComponents.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using MyCOLL.Frontend.Components.Layout
 
-<Router AppAssembly="@typeof(MauiProgram).Assembly" 
-        AdditionalAssemblies="new[] { typeof(RusticNavbar).Assembly }">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+@* ESTA TAG É OBRIGATÓRIA: 
+   Ela inicializa o sistema de Auth e passa o estado para o AuthorizeRouteView 
+*@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(MauiProgram).Assembly"
+            AdditionalAssemblies="new[] { typeof(RusticNavbar).Assembly }">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <LayoutView Layout="@typeof(MainLayout)">
+                        <div class="p-4 text-center">
+                            <h3>Acesso Negado</h3>
+                            <p>Não tem permissão para ver esta página.</p>
+                            <a href="login">Ir para Login</a>
+                        </div>
+                    </LayoutView>
+                </NotAuthorized>
+                <Authorizing>
+                    <div class="p-4">A verificar autenticação...</div>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+</CascadingAuthenticationState>
