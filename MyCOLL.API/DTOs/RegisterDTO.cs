@@ -13,5 +13,11 @@ namespace MyCOLL.API.DTOs
 
         [Compare("Password")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        public bool Fornecedor { get; set; } = false;
+        public string? NomeEmpresa { get; set; }
+        public string? NIF { get; set; }
+        public string? TelefoneEmpresa { get; set; }
+        public string? MoradaEmpresa { get; set; }
     }
 }

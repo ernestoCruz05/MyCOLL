@@ -236,64 +236,83 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                // Login é anónimo, não precisa de header
                 var response = await _httpClient.PostAsJsonAsync("api/Auth/login", new { Email = email, Password = password });
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-                    return new AuthResult { Success = true, Token = result?.Token, Message = "Login successful" };
+                    return new AuthResult { Success = true, Token = result?.Token, Message = "Login efetuado com sucesso" };
                 }
-                return new AuthResult { Success = false, Message = "Invalid credentials" };
+                return new AuthResult { Success = false, Message = "Credenciais inválidas" };
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Login error: {ex.Message}");
-                return new AuthResult { Success = false, Message = "Connection error" };
+                return new AuthResult { Success = false, Message = "Erro de conexão" };
             }
         }
 
-        public async Task<AuthResult> RegisterAsync(string email, string password, string confirmPassword)
+        public async Task<AuthResult> RegisterUserAsync(RegisterUserDto model)
         {
             try
             {
-                var payload = new { Email = email, Password = password, ConfirmPassword = confirmPassword };
-
-                var response = await _httpClient.PostAsJsonAsync("api/Auth/register", payload);
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/register", model);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return new AuthResult { Success = true, Message = "Registration successful" };
+                    var result = await response.Content.ReadFromJsonAsync<JsonElement>(); 
+                    string msg = result.TryGetProperty("message", out var m) ? m.ToString() : "Registo efetuado com sucesso";
+
+                    return new AuthResult { Success = true, Message = msg };
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
-                return new AuthResult { Success = false, Message = error };
+                return new AuthResult { Success = false, Message = $"Erro: {error}" };
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Registration error: {ex.Message}");
-                return new AuthResult { Success = false, Message = "Connection error" };
+                return new AuthResult { Success = false, Message = "Erro de conexão com o servidor" };
             }
         }
 
-        public async Task<AuthResult> RegisterFornecedorAsync(string email, string password, string confirmPassword)
+        public async Task<UserProfileModel?> GetProfileAsync()
         {
             try
             {
-                var payload = new { Email = email, Password = password, ConfirmPassword = confirmPassword };
-                var response = await _httpClient.PostAsJsonAsync("api/Auth/register/fornecedor", payload);
+                SetAuthorizationHeader();
+                return await _httpClient.GetFromJsonAsync<UserProfileModel>("api/Auth/me");
+            }
+            catch { return null; }
+        }
+
+        public async Task<bool> UpdateProfileAsync(UserProfileModel profile)
+        {
+            try
+            {
+                SetAuthorizationHeader();
+                var response = await _httpClient.PutAsJsonAsync("api/Auth/profile", profile);
+                return response.IsSuccessStatusCode;
+            }
+            catch { return false; }
+        }
+
+        public async Task<AuthResult> ChangePasswordAsync(string current, string newPass, string confirm)
+        {
+            try
+            {
+                SetAuthorizationHeader();
+                var payload = new { CurrentPassword = current, NewPassword = newPass, ConfirmNewPassword = confirm };
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/change-password", payload);
 
                 if (response.IsSuccessStatusCode)
-                {
-                    return new AuthResult { Success = true, Message = "Registo submetido! Aguarde aprovação." };
-                }
+                    return new AuthResult { Success = true, Message = "Password alterada!" };
 
                 var error = await response.Content.ReadAsStringAsync();
-                return new AuthResult { Success = false, Message = "Erro no registo de fornecedor." };
+                return new AuthResult { Success = false, Message = "Erro: " + error };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Registration error: {ex.Message}");
-                return new AuthResult { Success = false, Message = "Connection error" };
+                return new AuthResult { Success = false, Message = ex.Message };
             }
         }
 
@@ -375,6 +394,30 @@ namespace MyCOLL.UIComponents.Services
     {
         public int ProdutoId { get; set; }
         public int Quantidade { get; set; }
+    }
+
+    public class RegisterUserDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        public bool Fornecedor { get; set; } = false;
+        public string? NomeEmpresa { get; set; }
+        public string? NIF { get; set; }
+        public string? TelefoneEmpresa { get; set; }
+        public string? MoradaEmpresa { get; set; }
+    }
+
+    public class UserProfileModel
+    {
+        public string Email { get; set; } = string.Empty; 
+        public string NomeCompleto { get; set; } = string.Empty;
+        public bool IsFornecedor { get; set; }
+        public string? NomeEmpresa { get; set; }
+        public string? NIF { get; set; }
+        public string? TelefoneEmpresa { get; set; }
+        public string? MoradaEmpresa { get; set; }
     }
 
     #endregion

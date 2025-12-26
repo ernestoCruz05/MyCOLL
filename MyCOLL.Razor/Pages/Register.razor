@@ -1,5 +1,6 @@
 @page "/register"
 @using MyCOLL.UIComponents.Services
+@using System.ComponentModel.DataAnnotations 
 @inject CollectionApiService ApiService
 @inject NavigationManager NavManager
 
@@ -31,7 +32,7 @@
                     <label class="rustic-label">Email</label>
                     <div class="input-with-icon">
                         <i class="fas fa-envelope"></i>
-                        <InputText @bind-Value="registerModel.Email" class="rustic-input" />
+                        <InputText @bind-Value="registerModel.Email" class="rustic-input" placeholder="seu@email.com" />
                     </div>
                     <ValidationMessage For="@(() => registerModel.Email)" class="validation-msg" />
                 </div>
@@ -54,34 +55,65 @@
                     <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="validation-msg" />
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mt-3">
                     <label class="checkbox-container">
-                        <InputCheckbox @bind-Value="isFornecedor" />
+                        <InputCheckbox @bind-Value="registerModel.Fornecedor" />
                         <span class="checkmark"></span>
-                        <span style="position:relative; z-index:2;">Pretendo vender produtos (Conta Fornecedor)</span>
+                        <span style="position:relative; z-index:2; font-weight:bold;">Pretendo vender produtos (Conta Fornecedor)</span>
                     </label>
                 </div>
 
-                <button type="submit" class="rustic-btn-primary @(isFornecedor ? "btn-vendor" : "")">
-                    @if (isFornecedor)
+                @if (registerModel.Fornecedor)
+                {
+                    <div class="supplier-fields fade-in-up" style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h5 style="color: var(--rustic-dark); font-size: 0.9rem; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">
+                            <i class="fas fa-building"></i> Dados da Empresa
+                        </h5>
+
+                        <div class="form-group">
+                            <label class="rustic-label">Nome da Empresa / Loja</label>
+                            <InputText @bind-Value="registerModel.NomeEmpresa" class="rustic-input" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="rustic-label">NIF</label>
+                                    <InputText @bind-Value="registerModel.NIF" class="rustic-input" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="rustic-label">Telefone</label>
+                                    <InputText @bind-Value="registerModel.TelefoneEmpresa" class="rustic-input" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="rustic-label">Morada Completa</label>
+                            <InputTextArea @bind-Value="registerModel.MoradaEmpresa" class="rustic-input" rows="2" />
+                        </div>
+                    </div>
+                }
+
+                <button type="submit" class="rustic-btn-primary @(registerModel.Fornecedor ? "btn-vendor" : "")">
+                    @if (registerModel.Fornecedor)
                     {
-                        <i class="fas fa-store"></i>
+                        <i class="fas fa-store"></i> <span>Registar Fornecedor</span>
                     }
                     else
                     {
-
-                        <i class="fas fa-user-plus"></i>
+                        <i class="fas fa-user-plus"></i> <span>Criar Conta Cliente</span>
                     }
-                    @(isFornecedor ? "Registar como Fornecedor" : "Criar Registo")
                 </button>
             </EditForm>
 
             <div class="auth-footer">
                 <div style="margin-bottom: 12px;">
-                    <span class="text-muted" style="opacity: 0.8; color: var(--rustic-medium);">Já possui credenciais?</span>
+                    <span class="text-muted" style="opacity: 0.8; color: var(--rustic-medium);">Já possui conta?</span>
                     <a href="/login" class="rustic-link">Entrar no Arquivo</a>
                 </div>
-
                 <div style="border-top: 1px dashed rgba(93, 64, 55, 0.2); padding-top: 10px;">
                     <a href="/" class="rustic-link" style="margin-left: 0; font-size: 0.9em;">
                         <i class="fas fa-arrow-left"></i> Voltar à Página Principal
@@ -94,15 +126,8 @@
 </div>
 
 @code {
-    private class RegisterModel
-    {
-        [Required, EmailAddress] public string Email { get; set; } = "";
-        [Required, MinLength(6)] public string Password { get; set; } = "";
-        [Compare(nameof(Password))] public string ConfirmPassword { get; set; } = "";
-    }
-
-    private RegisterModel registerModel = new();
-    private bool isFornecedor = false;
+    private RegisterUserDto registerModel = new();
+    
     private string errorMessage = "";
     private string successMessage = "";
 
@@ -110,27 +135,26 @@
     {
         errorMessage = "";
         successMessage = "";
-        AuthResult result;
 
-        if (isFornecedor)
+        if (registerModel.Fornecedor && string.IsNullOrWhiteSpace(registerModel.NomeEmpresa))
         {
-            result = await ApiService.RegisterFornecedorAsync(registerModel.Email, registerModel.Password, registerModel.ConfirmPassword);
+            errorMessage = "O Nome da Empresa é obrigatório para fornecedores.";
+            return;
         }
-        else
-        {
-            result = await ApiService.RegisterAsync(registerModel.Email, registerModel.Password, registerModel.ConfirmPassword);
-        }
+
+        var result = await ApiService.RegisterUserAsync(registerModel);
 
         if (result.Success)
         {
-            if (isFornecedor)
+            successMessage = result.Message;
+            if (!registerModel.Fornecedor)
             {
-                successMessage = "Conta criada! Aguarde a aprovação do administrador para fazer login.";
-                registerModel = new();
+                await Task.Delay(2000);
+                NavManager.NavigateTo("/login");
             }
             else
             {
-                NavManager.NavigateTo("/login");
+                registerModel = new();
             }
         }
         else

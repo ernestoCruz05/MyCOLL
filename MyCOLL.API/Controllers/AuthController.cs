@@ -6,6 +6,8 @@ using MyCOLL.API.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace MyCOLL.API.Controllers
 {
@@ -82,7 +84,7 @@ namespace MyCOLL.API.Controllers
         }
 
         /// <summary>
-        /// Regista novo Cliente
+        /// Regista novo utilizador (Cliente ou Fornecedor)
         /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
@@ -97,56 +99,120 @@ namespace MyCOLL.API.Controllers
             var user = new ApplicationUser
             {
                 Email = model.Email,
+                UserName = model.Email, 
                 SecurityStamp = Guid.NewGuid().ToString(),
-                UserName = model.Email,
-                EmailConfirmed = true
+
+                IsFornecedor = model.Fornecedor,
+                NomeEmpresa = model.Fornecedor ? model.NomeEmpresa : null,
+                NIF = model.Fornecedor ? model.NIF : null,
+                TelefoneEmpresa = model.Fornecedor ? model.TelefoneEmpresa : null,
+                MoradaEmpresa = model.Fornecedor ? model.MoradaEmpresa : null
             };
 
+            if (model.Fornecedor)
+            {
+                user.EmailConfirmed = false;
+                user.LockoutEnabled = true;
+                user.LockoutEnd = DateTimeOffset.MaxValue; 
+            }
+            else
+            {
+                user.EmailConfirmed = true;
+                user.LockoutEnabled = false;
+            }
+
             var result = await _userManager.CreateAsync(user, model.Password);
+
             if (!result.Succeeded)
             {
                 var errors = result.Errors.Select(e => e.Description);
                 return BadRequest(new { message = "Erro ao criar utilizador", errors });
             }
 
-            await _userManager.AddToRoleAsync(user, "Cliente");
-
-            return Ok(new { message = "Utilizador registado com sucesso!" });
+            if (model.Fornecedor)
+            {
+                await _userManager.AddToRoleAsync(user, "Fornecedor");
+                return Ok(new { message = "Registo de Fornecedor submetido! A sua conta ficará pendente até aprovação do administrador." });
+            }
+            else
+            {
+                await _userManager.AddToRoleAsync(user, "Cliente");
+                return Ok(new { message = "Cliente registado com sucesso!" });
+            }
         }
 
         /// <summary>
-        /// Regista novo Fornecedor (pendente de aprovação)
+        /// Obtém os dados do perfil do utilizador logado
         /// </summary>
-        [HttpPost("register/fornecedor")]
-        public async Task<IActionResult> RegisterFornecedor([FromBody] RegisterDto model)
+        [HttpGet("me")]
+        [Authorize] 
+        public async Task<IActionResult> GetMyProfile()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId!);
 
-            var userExists = await _userManager.FindByEmailAsync(model.Email);
-            if (userExists != null)
-                return Conflict(new { message = "Já existe um utilizador com este email" });
+            if (user == null) return NotFound();
 
-            var user = new ApplicationUser
+            return Ok(new
             {
-                Email = model.Email,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                UserName = model.Email,
-                EmailConfirmed = false,
-                LockoutEnabled = true,
-                LockoutEnd = DateTimeOffset.MaxValue // Bloqueado até aprovação
-            };
+                user.Email,
+                user.NomeCompleto,
+                user.IsFornecedor,
+                user.NomeEmpresa,
+                user.NIF,
+                user.TelefoneEmpresa,
+                user.MoradaEmpresa
+            });
+        }
 
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
+        /// <summary>
+        /// Atualiza os dados (exceto email e password)
+        /// </summary>
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UserProfileDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId!);
+
+            if (user == null) return NotFound();
+
+            user.NomeCompleto = dto.NomeCompleto;
+
+            if (user.IsFornecedor)
             {
-                var errors = result.Errors.Select(e => e.Description);
-                return BadRequest(new { message = "Erro ao criar utilizador", errors });
+                user.NomeEmpresa = dto.NomeEmpresa;
+                user.NIF = dto.NIF;
+                user.TelefoneEmpresa = dto.TelefoneEmpresa;
+                user.MoradaEmpresa = dto.MoradaEmpresa;
             }
 
-            await _userManager.AddToRoleAsync(user, "Fornecedor");
+            var result = await _userManager.UpdateAsync(user);
 
-            return Ok(new { message = "Registo submetido! Aguarde aprovação do administrador." });
+            if (result.Succeeded)
+                return Ok(new { message = "Perfil atualizado com sucesso!" });
+
+            return BadRequest(result.Errors);
+        }
+
+        /// <summary>
+        /// Altera a password verificando a antiga
+        /// </summary>
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId!);
+
+            if (user == null) return NotFound();
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+
+            if (result.Succeeded)
+                return Ok(new { message = "Password alterada com sucesso!" });
+
+            return BadRequest(result.Errors);
         }
     }
 }

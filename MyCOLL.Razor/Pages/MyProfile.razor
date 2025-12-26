@@ -1,0 +1,230 @@
+@page "/profile"
+@using MyCOLL.UIComponents.Services
+@using System.ComponentModel.DataAnnotations
+@inject CollectionApiService ApiService
+@inject NavigationManager NavManager
+
+<div class="rustic-theme">
+
+    <div class="rustic-header-bar">
+        <a href="/" class="rustic-back-btn">
+            <i class="bi bi-arrow-left"></i> Voltar à Loja
+        </a>
+
+        <div class="d-flex align-items-baseline">
+            <span class="header-brand">MyCOLL</span>
+            <span class="header-subtitle">MyProfile</span>
+        </div>
+
+        <div style="width: 130px;"></div>
+    </div>
+
+    <div class="container py-5" style="max-width: 800px;">
+
+        @if (isLoading)
+        {
+            <div class="loading-container text-center">
+                <div class="loading-spinner"></div>
+            </div>
+        }
+        else if (profile == null)
+        {
+            <div class="rustic-alert alert-error">
+                Não foi possível carregar o perfil. Por favor, faça login novamente.
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="rustic-alert alert-success mb-3 fade-in">
+                    <i class="fas fa-check-circle"></i> @successMessage
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="rustic-alert alert-error mb-3 fade-in">
+                    <i class="fas fa-exclamation-triangle"></i> @errorMessage
+                </div>
+            }
+
+            <div class="profile-tabs mb-4 text-center">
+                <button class="rustic-chip @(activeTab == "dados" ? "active" : "")" @onclick="@(() => activeTab = "dados")">
+                    <i class="fas fa-user-edit"></i> Dados Pessoais
+                </button>
+                <button class="rustic-chip @(activeTab == "seguranca" ? "active" : "")" @onclick="@(() => activeTab = "seguranca")">
+                    <i class="fas fa-key"></i> Segurança
+                </button>
+            </div>
+
+            <div class="rustic-auth-card wide dashed-border fade-in-up">
+
+                @if (activeTab == "dados")
+                {
+                    <EditForm Model="@profile" OnValidSubmit="HandleUpdateProfile">
+                        <DataAnnotationsValidator />
+
+                        <div class="form-group mb-3">
+                            <label class="rustic-label">Email (Não editável)</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-envelope"></i>
+                                <input type="text" class="rustic-input" value="@profile.Email" disabled style="opacity: 0.7; background: #eee; cursor: not-allowed;" />
+                            </div>
+                        </div>
+
+                        @if (profile.IsFornecedor)
+                        {
+                            <div class="supplier-section mt-4 pt-3 border-top">
+                                <h5 class="text-secondary" style="font-family: 'Cinzel', serif; margin-bottom: 15px;">
+                                    <i class="fas fa-store"></i> Dados de Fornecedor
+                                </h5>
+
+                                <div class="form-group mb-2">
+                                    <label class="rustic-label">Nome da Empresa</label>
+                                    <InputText @bind-Value="profile.NomeEmpresa" class="rustic-input" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-group">
+                                            <label class="rustic-label">NIF</label>
+                                            <InputText @bind-Value="profile.NIF" class="rustic-input" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-group">
+                                            <label class="rustic-label">Telefone</label>
+                                            <InputText @bind-Value="profile.TelefoneEmpresa" class="rustic-input" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label class="rustic-label">Morada da Sede</label>
+                                    <InputTextArea @bind-Value="profile.MoradaEmpresa" class="rustic-input" rows="2" />
+                                </div>
+                            </div>
+                        }
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="rustic-btn-primary px-5">
+                                <i class="fas fa-save"></i> Guardar Alterações
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+
+                @if (activeTab == "seguranca")
+                {
+                    <EditForm Model="@passModel" OnValidSubmit="HandleChangePassword">
+                        <DataAnnotationsValidator />
+
+                        <div class="form-group mb-3">
+                            <label class="rustic-label">Password Atual</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-lock"></i>
+                                <InputText type="password" @bind-Value="passModel.CurrentPassword" class="rustic-input" />
+                            </div>
+                            <ValidationMessage For="@(() => passModel.CurrentPassword)" />
+                        </div>
+
+                        <hr style="border-top: 1px dashed #ccc; margin: 20px 0;" />
+
+                        <div class="form-group mb-3">
+                            <label class="rustic-label">Nova Password</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-key"></i>
+                                <InputText type="password" @bind-Value="passModel.NewPassword" class="rustic-input" />
+                            </div>
+                            <ValidationMessage For="@(() => passModel.NewPassword)" />
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="rustic-label">Confirmar Nova Password</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-check-double"></i>
+                                <InputText type="password" @bind-Value="passModel.ConfirmNewPassword" class="rustic-input" />
+                            </div>
+                            <ValidationMessage For="@(() => passModel.ConfirmNewPassword)" />
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="rustic-btn-primary btn-vendor px-5">
+                                <i class="fas fa-lock"></i> Alterar Password
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="decorative-border"></div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string activeTab = "dados";
+    private string successMessage = "";
+    private string errorMessage = "";
+
+    private UserProfileModel? profile;
+    private PassChangeModel passModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfile();
+    }
+
+    private async Task LoadProfile()
+    {
+        isLoading = true;
+        profile = await ApiService.GetProfileAsync();
+        if (profile == null)
+        {
+            errorMessage = "Sessão expirada ou inválida.";
+        }
+        isLoading = false;
+    }
+
+    private async Task HandleUpdateProfile()
+    {
+        errorMessage = ""; successMessage = "";
+
+        if (profile == null) return;
+
+        var success = await ApiService.UpdateProfileAsync(profile);
+        if (success)
+            successMessage = "Dados atualizados com sucesso!";
+        else
+            errorMessage = "Não foi possível guardar as alterações.";
+    }
+
+    private async Task HandleChangePassword()
+    {
+        errorMessage = ""; successMessage = "";
+
+        var result = await ApiService.ChangePasswordAsync(passModel.CurrentPassword, passModel.NewPassword, passModel.ConfirmNewPassword);
+
+        if (result.Success)
+        {
+            successMessage = "Password alterada com sucesso!";
+            passModel = new();
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+    }
+
+    public class PassChangeModel
+    {
+        [Required(ErrorMessage = "Indique a password atual")]
+        public string CurrentPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Indique a nova password")]
+        [MinLength(6, ErrorMessage = "Mínimo 6 caracteres")]
+        public string NewPassword { get; set; } = "";
+
+        [Compare("NewPassword", ErrorMessage = "As passwords não coincidem")]
+        public string ConfirmNewPassword { get; set; } = "";
+    }
+}
