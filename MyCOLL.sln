@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCOLL.Frontend", "MyCOLL.F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCOLL.UIComponents", "MyCOLL.Razor\MyCOLL.UIComponents.csproj", "{A102160F-5615-4278-A1EB-4BBB184E0681}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCOLL.StoreHost", "MyCOLL.StoreHost\MyCOLL.StoreHost.csproj", "{6CB49A3E-3BA2-4AD4-B710-40C9931C88B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{A102160F-5615-4278-A1EB-4BBB184E0681}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A102160F-5615-4278-A1EB-4BBB184E0681}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A102160F-5615-4278-A1EB-4BBB184E0681}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CB49A3E-3BA2-4AD4-B710-40C9931C88B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CB49A3E-3BA2-4AD4-B710-40C9931C88B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CB49A3E-3BA2-4AD4-B710-40C9931C88B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CB49A3E-3BA2-4AD4-B710-40C9931C88B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
