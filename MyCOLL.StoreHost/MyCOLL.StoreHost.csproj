@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\css\app.css" />
     <Content Remove="wwwroot\css\rustic.css" />
   </ItemGroup>
 
@@ -15,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\css\app.css">
+      <PackagePath>staticwebassets</PackagePath>
+      <Pack>true</Pack>
+    </None>
     <None Include="wwwroot\css\rustic.css">
       <PackagePath>staticwebassets</PackagePath>
       <Pack>true</Pack>
