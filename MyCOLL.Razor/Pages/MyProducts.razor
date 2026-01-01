@@ -7,8 +7,6 @@
 @inject NavigationManager Navigation
 
 <div class="rustic-page-wrapper">
-
-
     <div class="rustic-header-bar">
         <a href="/" class="rustic-back-btn">
             <i class="bi bi-arrow-left"></i> Voltar à Loja
@@ -16,15 +14,13 @@
 
         <div class="d-flex align-items-baseline">
             <span class="header-brand">MyCOLL</span>
-            <span class="header-subtitle">Arquivo Pessoal</span>
+            <span class="header-subtitle">Os Meus Produtos</span>
         </div>
 
         <div style="width: 130px;"></div>
     </div>
 
-
     <div class="rustic-content-container container">
-
         @if (isLoading)
         {
             <div class="d-flex justify-content-center py-5">
@@ -54,7 +50,23 @@
                         </div>
 
                         <div class="card-content">
-                            <h5 class="card-title" title="@item.Nome">@item.Nome</h5>
+                            <h5 class="card-title" title="@item.Nome">@TruncateText(item.Nome, 25)</h5>
+
+                            <!-- Estatísticas de Stock e Vendas -->
+                            <div class="product-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-boxes"></i>
+                                    <span class="stat-label">Stock:</span>
+                                    <span class="stat-value @(item.Stock <= 3 ? "low-stock" : "") @(item.Stock == 0 ? "out-of-stock" : "")">
+                                        @item.Stock
+                                    </span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <span class="stat-label">Vendidos:</span>
+                                    <span class="stat-value sold">@item.UnidadesVendidas</span>
+                                </div>
+                            </div>
 
                             <div class="d-flex justify-content-between align-items-center mt-auto">
                                 <div>
@@ -65,8 +77,9 @@
                                     <span class="card-price">@item.PrecoBase.ToString("C")</span>
                                 </div>
 
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item.Id)" title="Eliminar">
-                                    <i class="bi bi-trash"></i>
+                                <button class="btn-delete-product" @onclick="() => Delete(item.Id)" title="Eliminar Produto">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <span>Eliminar</span>
                                 </button>
                             </div>
                         </div>
@@ -108,5 +121,12 @@
         {
             await LoadProducts();
         }
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text ?? string.Empty;
+        return text[..(maxLength - 3)] + "...";
     }
 }

@@ -1128,3 +1128,697 @@ body {
     .rustic-form-card.compact .rustic-form-body {
         padding: 1.5rem; 
     }
+
+/* ============================================
+   CHECKOUT MODAL STYLES
+   ============================================ */
+
+.checkout-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.checkout-wrapper {
+    min-height: auto;
+    padding: 1rem;
+}
+
+.checkout-card {
+    max-width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.checkout-header {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.close-btn {
+    background: transparent;
+    border: 2px solid var(--rustic-medium);
+    color: var(--rustic-medium);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: var(--rustic-dark);
+    border-color: var(--rustic-gold);
+    color: var(--rustic-gold);
+}
+
+/* Order Summary */
+.order-summary-section {
+    background: rgba(62, 39, 35, 0.05);
+    border: 1px solid var(--rustic-light);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-subtitle {
+    font-family: var(--font-display);
+    color: var(--rustic-dark);
+    font-size: 1rem;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-subtitle i {
+    color: var(--rustic-gold-dark);
+}
+
+.order-items-list {
+    margin-bottom: 0.75rem;
+}
+
+.order-item-row {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed rgba(93, 64, 55, 0.2);
+    font-size: 0.9rem;
+}
+
+.order-item-row:last-child {
+    border-bottom: none;
+}
+
+.item-qty {
+    color: var(--rustic-medium);
+    width: 35px;
+    font-weight: bold;
+}
+
+.item-name {
+    flex: 1;
+    color: var(--rustic-dark);
+}
+
+.item-price {
+    font-weight: bold;
+    color: var(--rustic-dark);
+}
+
+.order-subtotal {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--rustic-medium);
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+/* Delivery Options */
+.delivery-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.delivery-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--rustic-light);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.delivery-option:hover {
+    border-color: var(--rustic-medium);
+    background: var(--rustic-lighter);
+}
+
+.delivery-option.selected {
+    border-color: var(--rustic-gold);
+    background: rgba(255, 179, 0, 0.1);
+}
+
+.option-radio {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+    color: var(--rustic-medium);
+}
+
+.delivery-option.selected .option-radio {
+    color: var(--rustic-gold);
+}
+
+.option-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.option-name {
+    font-weight: bold;
+    color: var(--rustic-dark);
+}
+
+.option-time {
+    font-size: 0.8rem;
+    color: var(--rustic-medium);
+}
+
+.option-time i {
+    margin-right: 4px;
+}
+
+.option-price {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--rustic-gold-dark);
+}
+
+.loading-modes, .no-modes-warning {
+    padding: 1rem;
+    text-align: center;
+    color: var(--rustic-medium);
+    font-style: italic;
+}
+
+.no-modes-warning {
+    color: var(--warning-color);
+}
+
+/* Payment Section (substituir payment-simulation-section) */
+.payment-section {
+    background: rgba(62, 39, 35, 0.03);
+    border: 1px solid var(--rustic-light);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.payment-section .form-group {
+    margin-bottom: 1rem;
+}
+
+.payment-section .rustic-input {
+    padding-left: 40px;
+}
+
+/* Final Total */
+.final-total-section {
+    background: var(--rustic-dark);
+    color: var(--parchment);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    font-size: 0.95rem;
+}
+
+.total-row.grand-total {
+    border-top: 2px solid var(--rustic-gold);
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--rustic-gold);
+}
+
+.btn-checkout-submit {
+    font-size: 1.1rem;
+    padding: 1rem;
+}
+
+.btn-checkout-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Order Success */
+.order-success {
+    text-align: center;
+    padding: 2rem;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+}
+
+.order-success h4 {
+    font-family: var(--font-display);
+    color: var(--rustic-dark);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.order-success p {
+    color: var(--rustic-medium);
+    margin-bottom: 0.5rem;
+}
+
+.order-success .order-info {
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+}
+
+/* Row Helper */
+.row {
+    display: flex;
+    gap: 1rem;
+}
+
+.col-6 {
+    flex: 1;
+}
+
+/* Fade-in animation */
+.fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   MY ORDERS PAGE STYLES
+   ============================================ */
+
+.empty-orders-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--rustic-medium);
+}
+
+.empty-orders-state .empty-icon {
+    font-size: 5rem;
+    color: var(--rustic-light);
+    margin-bottom: 1.5rem;
+}
+
+.empty-orders-state h4 {
+    font-family: var(--font-display);
+    color: var(--rustic-dark);
+    margin-bottom: 0.5rem;
+}
+
+.empty-orders-state p {
+    margin-bottom: 1.5rem;
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.order-card {
+    background: var(--parchment);
+    border: 2px solid var(--rustic-medium);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.order-card:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--rustic-gold);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: var(--rustic-dark);
+    color: var(--rustic-gold);
+}
+
+.order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.order-number {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.order-number i {
+    margin-right: 0.5rem;
+}
+
+.order-date {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.order-date i {
+    margin-right: 0.3rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.status-pending {
+    background: rgba(255, 152, 0, 0.2);
+    color: #e65100;
+    border: 1px solid #ff9800;
+}
+
+.status-paid {
+    background: rgba(33, 150, 243, 0.2);
+    color: #1565c0;
+    border: 1px solid #2196f3;
+}
+
+.status-shipped {
+    background: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+    border: 1px solid #9c27b0;
+}
+
+.status-delivered {
+    background: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid #4caf50;
+}
+
+.status-cancelled {
+    background: rgba(244, 67, 54, 0.2);
+    color: #c62828;
+    border: 1px solid #f44336;
+}
+
+.order-body {
+    padding: 1.25rem;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.order-items {
+    flex: 1;
+    min-width: 200px;
+}
+
+.order-item-preview {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed rgba(93, 64, 55, 0.2);
+    font-size: 0.9rem;
+}
+
+.order-item-preview:last-child {
+    border-bottom: none;
+}
+
+.order-item-preview .item-qty {
+    color: var(--rustic-gold-dark);
+    font-weight: bold;
+    width: 35px;
+}
+
+.order-item-preview .item-name {
+    flex: 1;
+    color: var(--rustic-dark);
+}
+
+.order-item-preview .item-price {
+    font-weight: bold;
+    color: var(--rustic-dark);
+}
+
+.more-items {
+    color: var(--rustic-medium);
+    font-size: 0.85rem;
+    font-style: italic;
+    padding-top: 0.5rem;
+}
+
+.order-delivery {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+}
+
+.delivery-method, .delivery-address {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--rustic-medium);
+}
+
+.delivery-method i, .delivery-address i {
+    color: var(--rustic-gold-dark);
+    width: 18px;
+}
+
+.order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 1rem 1.25rem;
+    background: var(--aged-paper);
+    border-top: 1px solid var(--rustic-light);
+}
+
+.order-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.order-totals .total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    font-size: 0.9rem;
+    color: var(--rustic-medium);
+}
+
+.order-totals .total-row.grand-total {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--rustic-dark);
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--rustic-medium);
+    margin-top: 0.3rem;
+}
+
+.btn-view-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--rustic-dark);
+    color: var(--rustic-gold);
+    border: 2px solid var(--rustic-gold);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-main);
+    transition: all 0.2s;
+}
+
+.btn-view-details:hover {
+    background: var(--rustic-gold);
+    color: var(--rustic-darker);
+}
+
+/* Order Progress */
+.order-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.5);
+    gap: 0;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    opacity: 0.4;
+    transition: all 0.3s;
+}
+
+.progress-step.completed, .progress-step.active {
+    opacity: 1;
+}
+
+.progress-step .step-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--rustic-light);
+    color: var(--rustic-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.progress-step.completed .step-icon {
+    background: var(--success-color);
+    color: white;
+}
+
+.progress-step.active .step-icon {
+    background: var(--rustic-gold);
+    color: var(--rustic-darker);
+    box-shadow: 0 0 0 3px rgba(255, 179, 0, 0.3);
+}
+
+.progress-step span {
+    font-size: 0.75rem;
+    color: var(--rustic-medium);
+}
+
+.progress-step.active span, .progress-step.completed span {
+    color: var(--rustic-dark);
+    font-weight: 600;
+}
+
+.progress-line {
+    width: 40px;
+    height: 3px;
+    background: var(--rustic-light);
+    margin: 0 0.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.progress-line.completed {
+    background: var(--success-color);
+}
+
+.order-cancelled-banner {
+    background: rgba(244, 67, 54, 0.1);
+    color: #c62828;
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: bold;
+    border-top: 2px solid #f44336;
+}
+
+/* ============================================
+   MY PRODUCTS - STATISTICS STYLES
+   ============================================ */
+
+.product-stats {
+    display: flex;
+    gap: 1rem;
+    margin: 0.75rem 0;
+    padding: 0.5rem 0;
+    border-top: 1px dashed var(--rustic-light);
+    border-bottom: 1px dashed var(--rustic-light);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+}
+
+.stat-item i {
+    color: var(--rustic-gold-dark);
+    font-size: 0.9rem;
+}
+
+.stat-label {
+    color: var(--rustic-medium);
+}
+
+.stat-value {
+    font-weight: bold;
+    color: var(--rustic-dark);
+}
+
+.stat-value.low-stock {
+    color: var(--warning-color);
+}
+
+.stat-value.out-of-stock {
+    color: var(--danger-color);
+}
+
+.stat-value.sold {
+    color: var(--success-color);
+}
+
+/* ============================================
+   MY PRODUCTS - DELETE BUTTON STYLES
+   ============================================ */
+
+.btn-delete-product {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: #c62828;
+    border: 2px solid #c62828;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-product:hover {
+    background: #c62828;
+    color: white;
+    transform: scale(1.02);
+}
+
+.btn-delete-product i {
+    font-size: 1rem;
+}

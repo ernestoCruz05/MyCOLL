@@ -30,7 +30,9 @@
         }
         else if (Product.Stock <= 3)
         {
-
+            <div class="stock-badge low-stock">
+                <i class="fas fa-exclamation-triangle"></i> Últimas @Product.Stock unidades
+            </div>
         }
 
         <!-- Quick Actions Overlay -->
@@ -38,10 +40,16 @@
             <button class="overlay-btn" @onclick="OnInspectClick" title="View Details">
                 <i class="fas fa-eye"></i>
             </button>
-            @if (Product.Stock > 0)
+            @if (CanAddToCart)
             {
                 <button class="overlay-btn add-cart-btn" @onclick="AddToCartClick" title="Add to Cart">
                     <i class="fas fa-cart-plus"></i>
+                </button>
+            }
+            else if (Product.Stock > 0 && !CanAddToCart)
+            {
+                <button class="overlay-btn" disabled title="Máximo no carrinho">
+                    <i class="fas fa-check"></i>
                 </button>
             }
         </div>
@@ -73,7 +81,7 @@
     @if (IsInCart)
     {
         <div class="cart-indicator">
-            <i class="fas fa-check-circle"></i> In Cart (@CartQuantity)
+            <i class="fas fa-check-circle"></i> In Cart (@CartQuantity/@Product.Stock)
         </div>
     }
 </div>
@@ -87,6 +95,7 @@
 
     private bool IsInCart => CartService.ContainsProduct(Product.Id);
     private int CartQuantity => CartService.GetQuantity(Product.Id);
+    private bool CanAddToCart => Product.Stock > 0 && CartService.CanAddMore(Product.Id, Product.Stock);
 
     protected override void OnInitialized()
     {
@@ -100,7 +109,7 @@
 
     private async Task AddToCartClick()
     {
-        if (Product.Stock > 0)
+        if (CanAddToCart)
         {
             CartService.AddItem(Product);
             await OnAddToCart.InvokeAsync(Product);
@@ -112,11 +121,9 @@
         if (string.IsNullOrEmpty(imageUrl))
             return string.Empty;
 
-        // Se já for URL completo, retorna
         if (imageUrl.StartsWith("http://") || imageUrl.StartsWith("https://"))
             return imageUrl;
 
-        // Senão, adiciona o BaseAddress da API
         var baseUrl = ApiService.GetBaseUrl();
         return $"{baseUrl.TrimEnd('/')}{imageUrl}";
     }

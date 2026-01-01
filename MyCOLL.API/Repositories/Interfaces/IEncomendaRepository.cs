@@ -9,5 +9,10 @@ namespace MyCOLL.API.Repositories.Interfaces
         Task<Encomenda?> GetByIdAsync(int id);
         Task<Encomenda> CreateAsync(Encomenda encomenda);
         Task UpdateEstadoAsync(int id, EstadoEncomenda novoEstado);
+        
+        /// <summary>
+        /// Obtém o total de unidades vendidas de um produto (soma das quantidades em encomendas não canceladas)
+        /// </summary>
+        Task<int> GetUnidadesVendidasPorProdutoAsync(int produtoId);
     }
 }

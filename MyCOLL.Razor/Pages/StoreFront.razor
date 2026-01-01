@@ -5,6 +5,7 @@
 @inject CollectionApiService ApiService
 @inject CartService CartService
 @inject UserService UserService
+@inject NavigationManager NavManager
 
 <div class="rustic-theme">
     <RusticNavbar 
@@ -149,6 +150,11 @@
 <ProductDetailModal Product="selectedProduct" CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
                     IsVisible="isModalOpen" OnClose="CloseModal" OnAddToCart="HandleModalAddToCart" />
 
+<!-- Checkout Modal -->
+<CheckoutModal IsVisible="isCheckoutOpen" 
+               OnClose="CloseCheckout" 
+               OnOrderComplete="HandleOrderComplete" />
+
 @if (showToast) { <div class="toast-notification"><i class="fas fa-check-circle"></i><span>@toastMessage</span></div> }
 
 @code {
@@ -159,6 +165,7 @@
     private bool isLoading = true;
     private bool isCartOpen = false;
     private bool isModalOpen = false;
+    private bool isCheckoutOpen = false;
     private Produto? selectedProduct;
     private int? selectedCategoryId = null;
     private int? selectedSubId = null;
@@ -288,7 +295,42 @@
     private void HandleModalAddToCart((Produto product, int quantity) args) { ShowToast($"Added {args.quantity}x '{args.product.Nome}' to cart"); }
     private void ToggleCart() => isCartOpen = !isCartOpen;
     private void CloseCart() => isCartOpen = false;
-    private void HandleCheckout() { if(!UserService.IsLoggedIn){ShowLoginModal(); return;} ShowToast("Checkout..."); CloseCart(); }
-    private void ShowLoginModal() { ShowToast("Please login first"); }
+    private void HandleCheckout() 
+    { 
+        if (!UserService.IsLoggedIn)
+        {
+            CloseCart();
+            NavManager.NavigateTo("/login");
+            return;
+        }
+        
+        if (CartService.ItemCount == 0)
+        {
+            ShowToast("O carrinho está vazio");
+            return;
+        }
+        
+        // Fechar o cart drawer e abrir o checkout modal
+        CloseCart();
+        isCheckoutOpen = true;
+        StateHasChanged();
+    }
+
+    private void CloseCheckout()
+    {
+        isCheckoutOpen = false;
+        StateHasChanged();
+    }
+
+    private void HandleOrderComplete()
+    {
+        ShowToast("Encomenda realizada com sucesso!");
+    }
+
+    private void ShowLoginModal() 
+    { 
+        NavManager.NavigateTo("/login"); 
+    }
+
     private async void ShowToast(string message) { toastMessage = message; showToast = true; StateHasChanged(); await Task.Delay(3000); showToast = false; StateHasChanged(); }
 }

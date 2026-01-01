@@ -1,0 +1,239 @@
+@page "/my-orders"
+@using Microsoft.AspNetCore.Authorization
+@using MyCOLL.UIComponents.Models
+@using MyCOLL.UIComponents.Services
+@attribute [Authorize(Roles = "Cliente,Fornecedor")]
+@inject CollectionApiService ApiService
+@inject NavigationManager Navigation
+
+<div class="rustic-page-wrapper">
+    <div class="rustic-header-bar">
+        <a href="/" class="rustic-back-btn">
+            <i class="bi bi-arrow-left"></i> Voltar à Loja
+        </a>
+
+        <div class="d-flex align-items-baseline">
+            <span class="header-brand">MyCOLL</span>
+            <span class="header-subtitle">As Minhas Encomendas</span>
+        </div>
+
+        <div style="width: 130px;"></div>
+    </div>
+
+    <div class="rustic-content-container container">
+        @if (isLoading)
+        {
+            <div class="d-flex justify-content-center py-5">
+                <div class="spinner-border text-warning" style="width: 3rem; height: 3rem;" role="status"></div>
+            </div>
+        }
+        else if (Encomendas == null || !Encomendas.Any())
+        {
+            <div class="empty-orders-state">
+                <div class="empty-icon">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <h4>Ainda não tem encomendas</h4>
+                <p>Explore a nossa coleção e faça a sua primeira compra!</p>
+                <a href="/" class="rustic-btn-primary">
+                    <i class="fas fa-compass"></i> Explorar Coleção
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="orders-list">
+                @foreach (var encomenda in Encomendas)
+                {
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-info">
+                                <span class="order-number">
+                                    <i class="fas fa-receipt"></i> Encomenda #@encomenda.Id
+                                </span>
+                                <span class="order-date">
+                                    <i class="fas fa-calendar-alt"></i> @encomenda.DataEncomenda.ToString("dd/MM/yyyy HH:mm")
+                                </span>
+                            </div>
+                            <div class="order-status">
+                                <span class="status-badge @GetStatusClass(encomenda.Estado)">
+                                    <i class="@GetStatusIcon(encomenda.Estado)"></i>
+                                    @GetStatusText(encomenda.Estado)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="order-body">
+                            <div class="order-items">
+                                @foreach (var item in encomenda.Itens.Take(3))
+                                {
+                                    <div class="order-item-preview">
+                                        <span class="item-qty">@item.Quantidade×</span>
+                                        <span class="item-name">@(item.Produto?.Nome ?? "Produto")</span>
+                                        <span class="item-price">€@((item.Quantidade * item.PrecoUnitario).ToString("N2"))</span>
+                                    </div>
+                                }
+                                @if (encomenda.Itens.Count > 3)
+                                {
+                                    <div class="more-items">
+                                        <i class="fas fa-ellipsis-h"></i> +@(encomenda.Itens.Count - 3) mais itens
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="order-delivery">
+                                <div class="delivery-method">
+                                    <i class="fas fa-truck"></i>
+                                    <span>@encomenda.MetodoEntregaNome</span>
+                                </div>
+                                <div class="delivery-address" title="@encomenda.MoradaEnvio">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>@TruncateText(encomenda.MoradaEnvio, 40)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="order-footer">
+                            <div class="order-totals">
+                                <div class="total-row">
+                                    <span>Produtos:</span>
+                                    <span>€@((encomenda.Total - encomenda.CustoEntrega).ToString("N2"))</span>
+                                </div>
+                                <div class="total-row">
+                                    <span>Portes:</span>
+                                    <span>€@encomenda.CustoEntrega.ToString("N2")</span>
+                                </div>
+                                <div class="total-row grand-total">
+                                    <span>Total:</span>
+                                    <span>€@encomenda.Total.ToString("N2")</span>
+                                </div>
+                            </div>
+                            <button class="btn-view-details" @onclick="() => ViewOrderDetails(encomenda.Id)">
+                                <i class="fas fa-eye"></i> Ver Detalhes
+                            </button>
+                        </div>
+
+                        <!-- Status Progress -->
+                        <div class="order-progress">
+                            <div class="progress-step @(IsStepCompleted(encomenda.Estado, "Pendente") ? "completed" : "") @(IsStepActive(encomenda.Estado, "Pendente") ? "active" : "")">
+                                <div class="step-icon"><i class="fas fa-clock"></i></div>
+                                <span>Pendente</span>
+                            </div>
+                            <div class="progress-line @(IsStepCompleted(encomenda.Estado, "Paga") ? "completed" : "")"></div>
+                            <div class="progress-step @(IsStepCompleted(encomenda.Estado, "Paga") ? "completed" : "") @(IsStepActive(encomenda.Estado, "Paga") ? "active" : "")">
+                                <div class="step-icon"><i class="fas fa-credit-card"></i></div>
+                                <span>Paga</span>
+                            </div>
+                            <div class="progress-line @(IsStepCompleted(encomenda.Estado, "Expedida") ? "completed" : "")"></div>
+                            <div class="progress-step @(IsStepCompleted(encomenda.Estado, "Expedida") ? "completed" : "") @(IsStepActive(encomenda.Estado, "Expedida") ? "active" : "")">
+                                <div class="step-icon"><i class="fas fa-shipping-fast"></i></div>
+                                <span>Expedida</span>
+                            </div>
+                            <div class="progress-line @(IsStepCompleted(encomenda.Estado, "Entregue") ? "completed" : "")"></div>
+                            <div class="progress-step @(IsStepCompleted(encomenda.Estado, "Entregue") ? "completed" : "") @(IsStepActive(encomenda.Estado, "Entregue") ? "active" : "")">
+                                <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                                <span>Entregue</span>
+                            </div>
+                        </div>
+
+                        @if (encomenda.Estado == "Cancelada")
+                        {
+                            <div class="order-cancelled-banner">
+                                <i class="fas fa-times-circle"></i> Esta encomenda foi cancelada
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Encomenda> Encomendas = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        try
+        {
+            isLoading = true;
+            Encomendas = await ApiService.GetMyOrdersAsync();
+            // Ordenar por data (mais recentes primeiro)
+            Encomendas = Encomendas.OrderByDescending(e => e.DataEncomenda).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar encomendas: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ViewOrderDetails(int orderId)
+    {
+        // Por agora, pode-se implementar um modal ou navegar para uma página de detalhes
+        // Navigation.NavigateTo($"/my-orders/{orderId}");
+    }
+
+    private string GetStatusClass(string estado) => estado switch
+    {
+        "Pendente" => "status-pending",
+        "Paga" => "status-paid",
+        "Expedida" => "status-shipped",
+        "Entregue" => "status-delivered",
+        "Cancelada" => "status-cancelled",
+        _ => "status-pending"
+    };
+
+    private string GetStatusIcon(string estado) => estado switch
+    {
+        "Pendente" => "fas fa-clock",
+        "Paga" => "fas fa-credit-card",
+        "Expedida" => "fas fa-shipping-fast",
+        "Entregue" => "fas fa-check-circle",
+        "Cancelada" => "fas fa-times-circle",
+        _ => "fas fa-question-circle"
+    };
+
+    private string GetStatusText(string estado) => estado switch
+    {
+        "Pendente" => "Aguarda Pagamento",
+        "Paga" => "Pagamento Confirmado",
+        "Expedida" => "Em Trânsito",
+        "Entregue" => "Entregue",
+        "Cancelada" => "Cancelada",
+        _ => estado
+    };
+
+    private bool IsStepCompleted(string currentEstado, string step)
+    {
+        var order = new[] { "Pendente", "Paga", "Expedida", "Entregue" };
+        var currentIndex = Array.IndexOf(order, currentEstado);
+        var stepIndex = Array.IndexOf(order, step);
+        
+        if (currentEstado == "Cancelada") return false;
+        
+        return stepIndex < currentIndex;
+    }
+
+    private bool IsStepActive(string currentEstado, string step)
+    {
+        if (currentEstado == "Cancelada") return false;
+        return currentEstado == step;
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text ?? string.Empty;
+        return text[..(maxLength - 3)] + "...";
+    }
+}

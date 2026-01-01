@@ -18,8 +18,10 @@ namespace MyCOLL.UIComponents.Models
     {
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public decimal Preco { get; set; }
+        public decimal CustoBase { get; set; }
+        public int PrazoEstimadoDias { get; set; }
         public string? Descricao { get; set; }
+        public bool Ativo { get; set; } = true;
     }
 
     public class UserInfoModel
@@ -51,6 +53,9 @@ namespace MyCOLL.UIComponents.Models
         public UserInfoModel? Fornecedor { get; set; }
 
         public string? ImagemUrl { get; set; }
+        
+        // Estatísticas de vendas (para MyProducts)
+        public int UnidadesVendidas { get; set; }
     }
 
     public class ProdutoCreateDto
@@ -75,5 +80,30 @@ namespace MyCOLL.UIComponents.Models
         public int? ModoEntregaId { get; set; }
 
         public string ImagemUrl { get; set; } = string.Empty;
+    }
+
+    // Modelos de Encomenda
+    public class Encomenda
+    {
+        public int Id { get; set; }
+        public string ClienteId { get; set; } = string.Empty;
+        public UserInfoModel? Cliente { get; set; }
+        public DateTime DataEncomenda { get; set; }
+        public decimal Total { get; set; }
+        public string Estado { get; set; } = string.Empty;
+        public string MoradaEnvio { get; set; } = string.Empty;
+        public string MetodoEntregaNome { get; set; } = string.Empty;
+        public decimal CustoEntrega { get; set; }
+        public List<DetalheEncomenda> Itens { get; set; } = new();
+    }
+
+    public class DetalheEncomenda
+    {
+        public int Id { get; set; }
+        public int EncomendaId { get; set; }
+        public int ProdutoId { get; set; }
+        public Produto? Produto { get; set; }
+        public int Quantidade { get; set; }
+        public decimal PrecoUnitario { get; set; }
     }
 }

@@ -30,24 +30,39 @@ namespace MyCOLL.UIComponents.Services
         public decimal TotalPrice => _items.Sum(i => i.TotalPrice);
 
         /// <summary>
-        /// Add a product to the cart
+        /// Add a product to the cart (respects stock limits)
         /// </summary>
-        public void AddItem(Produto product, int quantity = 1)
+        public bool AddItem(Produto product, int quantity = 1)
         {
+            if (product.Stock <= 0) return false;
+            
             var existing = _items.FirstOrDefault(i => i.Product.Id == product.Id);
             if (existing != null)
             {
-                existing.Quantity += quantity;
+                // Verificar se a nova quantidade excede o stock
+                int newQuantity = existing.Quantity + quantity;
+                if (newQuantity > product.Stock)
+                {
+                    // Limitar ao stock disponível
+                    existing.Quantity = product.Stock;
+                }
+                else
+                {
+                    existing.Quantity = newQuantity;
+                }
             }
             else
             {
+                // Verificar se a quantidade inicial não excede o stock
+                int actualQuantity = Math.Min(quantity, product.Stock);
                 _items.Add(new CartItem
                 {
                     Product = product,
-                    Quantity = quantity
+                    Quantity = actualQuantity
                 });
             }
             NotifyCartChanged();
+            return true;
         }
 
         /// <summary>
@@ -64,7 +79,7 @@ namespace MyCOLL.UIComponents.Services
         }
 
         /// <summary>
-        /// Update quantity of an item
+        /// Update quantity of an item (respects stock limits)
         /// </summary>
         public void UpdateQuantity(int productId, int quantity)
         {
@@ -77,10 +92,28 @@ namespace MyCOLL.UIComponents.Services
                 }
                 else
                 {
-                    item.Quantity = quantity;
+                    // Limitar ao stock disponível
+                    item.Quantity = Math.Min(quantity, item.Product.Stock);
                 }
                 NotifyCartChanged();
             }
+        }
+
+        /// <summary>
+        /// Get available quantity that can still be added for a product
+        /// </summary>
+        public int GetAvailableQuantity(int productId, int productStock)
+        {
+            var currentInCart = GetQuantity(productId);
+            return Math.Max(0, productStock - currentInCart);
+        }
+
+        /// <summary>
+        /// Check if more items can be added to cart for a product
+        /// </summary>
+        public bool CanAddMore(int productId, int productStock)
+        {
+            return GetAvailableQuantity(productId, productStock) > 0;
         }
 
         /// <summary>

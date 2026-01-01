@@ -320,23 +320,68 @@ namespace MyCOLL.UIComponents.Services
 
         #region Orders
 
-        public async Task<OrderResult> CreateOrderAsync(OrderCreateDto order)
+        public async Task<OrderResult> CreateOrderAsync(EncomendaCreateDto order)
         {
             try
             {
-                SetAuthorizationHeader(); // <--- Requer autenticação (Geralmente criar encomenda exige login)
+                SetAuthorizationHeader();
 
-                var response = await _httpClient.PostAsJsonAsync("api/Encomenda", order);
+                var response = await _httpClient.PostAsJsonAsync("api/Encomendas", order);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new OrderResult { Success = true, Message = "Order placed successfully" };
+                    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+                    string msg = result.TryGetProperty("message", out var m) ? m.ToString() : "Encomenda criada com sucesso!";
+                    return new OrderResult { Success = true, Message = msg };
                 }
-                return new OrderResult { Success = false, Message = "Failed to place order" };
+
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Order API Error: {errorContent}");
+                
+                // Tentar extrair mensagem de erro do JSON
+                try
+                {
+                    var errorJson = JsonSerializer.Deserialize<JsonElement>(errorContent);
+                    if (errorJson.TryGetProperty("message", out var errorMsg))
+                    {
+                        return new OrderResult { Success = false, Message = errorMsg.GetString() ?? "Erro ao criar encomenda" };
+                    }
+                }
+                catch { }
+                
+                return new OrderResult { Success = false, Message = "Erro ao criar encomenda" };
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Order creation error: {ex.Message}");
-                return new OrderResult { Success = false, Message = "Connection error" };
+                return new OrderResult { Success = false, Message = "Erro de conexão" };
+            }
+        }
+
+        public async Task<List<Encomenda>> GetMyOrdersAsync()
+        {
+            try
+            {
+                SetAuthorizationHeader();
+                return await _httpClient.GetFromJsonAsync<List<Encomenda>>("api/Encomendas/minhas") ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching orders: {ex.Message}");
+                return new List<Encomenda>();
+            }
+        }
+
+        public async Task<Encomenda?> GetOrderByIdAsync(int id)
+        {
+            try
+            {
+                SetAuthorizationHeader();
+                return await _httpClient.GetFromJsonAsync<Encomenda>($"api/Encomendas/{id}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching order: {ex.Message}");
+                return null;
             }
         }
 
@@ -344,7 +389,6 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                // URL corrigido para plural
                 return await _httpClient.GetFromJsonAsync<List<ModoEntrega>>("api/ModosEntrega") ?? new();
             }
             catch (Exception ex)
@@ -383,14 +427,15 @@ namespace MyCOLL.UIComponents.Services
         public string Message { get; set; } = string.Empty;
     }
 
-    public class OrderCreateDto
+    // DTO para criar encomenda (corresponde ao backend EncomendaCreateDto)
+    public class EncomendaCreateDto
     {
-        public string UserId { get; set; } = string.Empty;
+        public string MoradaEnvio { get; set; } = string.Empty;
         public int ModoEntregaId { get; set; }
-        public List<OrderItemDto> Items { get; set; } = new();
+        public List<CarrinhoItemDto> Itens { get; set; } = new();
     }
 
-    public class OrderItemDto
+    public class CarrinhoItemDto
     {
         public int ProdutoId { get; set; }
         public int Quantidade { get; set; }

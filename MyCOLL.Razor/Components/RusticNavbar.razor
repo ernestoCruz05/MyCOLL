@@ -58,8 +58,7 @@
                         </div>
                         <div class="dropdown-divider"></div>
 
-                        @* --- LÓGICA ESPECÍFICA DE PERFIL --- *@
-
+                        @* --- My Products (apenas Fornecedores) --- *@
                         @if (UserService.CurrentUser?.Role == "Fornecedor")
                         {
                             <button class="dropdown-item" @onclick="GoToMyProducts">
@@ -67,12 +66,10 @@
                             </button>
                         }
 
-                        @if (UserService.CurrentUser?.Role == "Cliente" || string.IsNullOrEmpty(UserService.CurrentUser?.Role))
-                        {
-                            <button class="dropdown-item" @onclick="ViewOrders">
-                                <i class="fas fa-receipt me-2"></i> My Orders
-                            </button>
-                        }
+                        @* --- My Orders (Clientes e Fornecedores) --- *@
+                        <button class="dropdown-item" @onclick="ViewOrders">
+                            <i class="fas fa-receipt me-2"></i> My Orders
+                        </button>
 
                         <button class="dropdown-item" @onclick="ViewProfile">
                             <i class="fas fa-user-cog me-2"></i> Profile
@@ -108,15 +105,14 @@
     [Parameter] public EventCallback<string> OnSearch { get; set; }
     [Parameter] public EventCallback OnHomeClick { get; set; }
 
-    [Parameter] public int CartCount { get; set; } // Mantido para compatibilidade
-    [Parameter] public EventCallback OnCartClick { get; set; } // Mantido para compatibilidade
+    [Parameter] public int CartCount { get; set; }
+    [Parameter] public EventCallback OnCartClick { get; set; }
 
     private string searchTerm = string.Empty;
     private bool showUserMenu = false;
 
     protected override void OnInitialized()
     {
-        // Subscrever eventos para atualizar a UI quando o estado muda
         CartService.OnCartChanged += StateHasChanged;
         UserService.OnUserChanged += StateHasChanged;
     }
@@ -137,7 +133,6 @@
 
     private async Task ToggleCart()
     {
-        // Tenta usar o evento novo, se não tiver delegate, usa o antigo
         if (OnCartToggle.HasDelegate)
             await OnCartToggle.InvokeAsync();
         else if (OnCartClick.HasDelegate)
@@ -170,7 +165,6 @@
     private void HandleLogout()
     {
         UserService.Logout();
-        // CartService.ClearCart(); // Opcional: limpar carrinho ao sair
         showUserMenu = false;
         NavManager.NavigateTo("/", forceLoad: true);
     }

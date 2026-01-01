@@ -37,10 +37,10 @@ namespace MyCOLL.API.Controllers
         }
 
         /// <summary>
-        /// Lista encomendas do cliente autenticado
+        /// Lista encomendas do utilizador autenticado (Cliente ou Fornecedor)
         /// </summary>
         [HttpGet("minhas")]
-        [Authorize(Roles = "Cliente")]
+        [Authorize(Roles = "Cliente,Fornecedor")]
         public async Task<ActionResult<IEnumerable<Encomenda>>> GetMinhasEncomendas()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -72,10 +72,10 @@ namespace MyCOLL.API.Controllers
         }
 
         /// <summary>
-        /// Cria nova encomenda (Cliente autenticado)
+        /// Cria nova encomenda (Cliente ou Fornecedor autenticado)
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Cliente")]
+        [Authorize(Roles = "Cliente,Fornecedor")]
         public async Task<ActionResult<Encomenda>> Create([FromBody] EncomendaCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);

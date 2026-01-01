@@ -1,0 +1,378 @@
+@using MyCOLL.UIComponents.Services
+@using MyCOLL.UIComponents.Models
+
+@if (IsVisible)
+{
+    <div class="checkout-overlay" @onclick="CloseIfClickedOutside">
+        <div class="rustic-theme auth-wrapper checkout-wrapper" @onclick:stopPropagation="true">
+            <div class="auth-container">
+                <div class="rustic-auth-card wide dashed-border checkout-card">
+                    
+                    <!-- Header com botão de fechar -->
+                    <div class="checkout-header">
+                        <button class="close-btn" @onclick="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="auth-header">
+                        <h3 class="auth-title">
+                            <i class="fas fa-shopping-bag"></i> Finalizar Encomenda
+                        </h3>
+                        <div class="decorative-line"></div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="rustic-alert alert-error">
+                            <i class="fas fa-exclamation-triangle"></i> @errorMessage
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="rustic-alert alert-success">
+                            <i class="fas fa-check-circle"></i> @successMessage
+                        </div>
+                    }
+
+                    @if (!orderCompleted)
+                    {
+                        <!-- Resumo do Carrinho -->
+                        <div class="order-summary-section">
+                            <h5 class="section-subtitle">
+                                <i class="fas fa-list"></i> Resumo do Pedido
+                            </h5>
+                            <div class="order-items-list">
+                                @foreach (var item in CartService.Items)
+                                {
+                                    <div class="order-item-row">
+                                        <span class="item-qty">@item.Quantity×</span>
+                                        <span class="item-name">@TruncateText(item.Product.Nome, 30)</span>
+                                        <span class="item-price">€@item.TotalPrice.ToString("N2")</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="order-subtotal">
+                                <span>Subtotal:</span>
+                                <span>€@CartService.TotalPrice.ToString("N2")</span>
+                            </div>
+                        </div>
+
+                        <EditForm Model="@checkoutModel" OnValidSubmit="HandleCheckout">
+                            <DataAnnotationsValidator />
+
+                            <!-- Morada de Envio -->
+                            <div class="form-group">
+                                <label class="rustic-label">
+                                    <i class="fas fa-map-marker-alt"></i> Morada de Envio
+                                </label>
+                                <InputTextArea @bind-Value="checkoutModel.MoradaEnvio" 
+                                              class="rustic-input" 
+                                              rows="3" 
+                                              placeholder="Rua, Número, Código Postal, Cidade..." />
+                                <ValidationMessage For="@(() => checkoutModel.MoradaEnvio)" class="validation-msg" />
+                            </div>
+
+                            <!-- Modo de Entrega -->
+                            <div class="form-group">
+                                <label class="rustic-label">
+                                    <i class="fas fa-truck"></i> Modo de Entrega
+                                </label>
+                                @if (isLoadingModes)
+                                {
+                                    <div class="loading-modes">
+                                        <i class="fas fa-spinner fa-spin"></i> A carregar opções...
+                                    </div>
+                                }
+                                else if (modosEntrega == null || !modosEntrega.Any())
+                                {
+                                    <div class="no-modes-warning">
+                                        <i class="fas fa-exclamation-circle"></i> Nenhum modo de entrega disponível
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="delivery-options">
+                                        @foreach (var modo in modosEntrega)
+                                        {
+                                            <div class="delivery-option @(checkoutModel.ModoEntregaId == modo.Id ? "selected" : "")"
+                                                 @onclick="() => SelectDeliveryMode(modo)">
+                                                <div class="option-radio">
+                                                    <i class="@(checkoutModel.ModoEntregaId == modo.Id ? "fas fa-check-circle" : "far fa-circle")"></i>
+                                                </div>
+                                                <div class="option-info">
+                                                    <span class="option-name">@modo.Nome</span>
+                                                    <span class="option-time">
+                                                        <i class="fas fa-clock"></i> ~@modo.PrazoEstimadoDias dias
+                                                    </span>
+                                                </div>
+                                                <div class="option-price">
+                                                    €@modo.CustoBase.ToString("N2")
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                <ValidationMessage For="@(() => checkoutModel.ModoEntregaId)" class="validation-msg" />
+                            </div>
+
+                            <!-- Dados de Pagamento -->
+                            <div class="payment-section">
+                                <h5 class="section-subtitle">
+                                    <i class="fas fa-credit-card"></i> Dados de Pagamento
+                                </h5>
+                                
+                                <div class="form-group">
+                                    <label class="rustic-label">Nome no Cartão</label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-user"></i>
+                                        <InputText @bind-Value="checkoutModel.NomeCartao" 
+                                                  class="rustic-input" 
+                                                  placeholder="Nome Completo" />
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="rustic-label">Número do Cartão</label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-credit-card"></i>
+                                        <InputText @bind-Value="checkoutModel.NumeroCartao" 
+                                                  class="rustic-input" 
+                                                  placeholder="0000 0000 0000 0000" />
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label class="rustic-label">Validade</label>
+                                            <InputText @bind-Value="checkoutModel.ValidadeCartao" 
+                                                      class="rustic-input" 
+                                                      placeholder="MM/AA" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label class="rustic-label">CVV</label>
+                                            <InputText @bind-Value="checkoutModel.CVV" 
+                                                      class="rustic-input" 
+                                                      placeholder="123" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Total Final -->
+                            <div class="final-total-section">
+                                <div class="total-row">
+                                    <span>Produtos:</span>
+                                    <span>€@CartService.TotalPrice.ToString("N2")</span>
+                                </div>
+                                <div class="total-row">
+                                    <span>Portes:</span>
+                                    <span>€@selectedDeliveryCost.ToString("N2")</span>
+                                </div>
+                                <div class="total-row grand-total">
+                                    <span>Total a Pagar:</span>
+                                    <span>€@((CartService.TotalPrice + selectedDeliveryCost).ToString("N2"))</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" 
+                                    class="rustic-btn-primary btn-checkout-submit" 
+                                    disabled="@(isProcessing || !IsFormValid())">
+                                @if (isProcessing)
+                                {
+                                    <i class="fas fa-spinner fa-spin"></i> <span>A processar...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-lock"></i> <span>Concluir Compra</span>
+                                }
+                            </button>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <!-- Mensagem de Sucesso -->
+                        <div class="order-success">
+                            <div class="success-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h4>Encomenda Confirmada!</h4>
+                            <p>A sua encomenda foi registada com sucesso.</p>
+                            <p class="order-info">Receberá um email de confirmação em breve.</p>
+                            <button class="rustic-btn-primary" @onclick="CloseAndReset">
+                                <i class="fas fa-home"></i> Voltar à Loja
+                            </button>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] public CartService CartService { get; set; } = default!;
+    [Inject] public CollectionApiService ApiService { get; set; } = default!;
+    [Inject] public UserService UserService { get; set; } = default!;
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnOrderComplete { get; set; }
+
+    private CheckoutFormModel checkoutModel = new();
+    private List<ModoEntrega>? modosEntrega;
+    private bool isLoadingModes = true;
+    private bool isProcessing = false;
+    private bool orderCompleted = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+    private decimal selectedDeliveryCost = 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && modosEntrega == null)
+        {
+            await LoadDeliveryModes();
+        }
+    }
+
+    private async Task LoadDeliveryModes()
+    {
+        isLoadingModes = true;
+        try
+        {
+            modosEntrega = await ApiService.GetDeliveryModesAsync();
+            
+            // Selecionar o primeiro modo por padrão
+            if (modosEntrega?.Any() == true)
+            {
+                SelectDeliveryMode(modosEntrega.First());
+            }
+        }
+        finally
+        {
+            isLoadingModes = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SelectDeliveryMode(ModoEntrega modo)
+    {
+        checkoutModel.ModoEntregaId = modo.Id;
+        selectedDeliveryCost = modo.CustoBase;
+    }
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(checkoutModel.MoradaEnvio) &&
+               checkoutModel.ModoEntregaId > 0 &&
+               !string.IsNullOrWhiteSpace(checkoutModel.NomeCartao) &&
+               !string.IsNullOrWhiteSpace(checkoutModel.NumeroCartao) &&
+               !string.IsNullOrWhiteSpace(checkoutModel.ValidadeCartao) &&
+               !string.IsNullOrWhiteSpace(checkoutModel.CVV) &&
+               CartService.ItemCount > 0;
+    }
+
+    private async Task HandleCheckout()
+    {
+        if (!IsFormValid())
+        {
+            errorMessage = "Por favor, preencha todos os campos.";
+            return;
+        }
+
+        errorMessage = "";
+        isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            // Criar o DTO de encomenda
+            var orderDto = new EncomendaCreateDto
+            {
+                MoradaEnvio = checkoutModel.MoradaEnvio,
+                ModoEntregaId = checkoutModel.ModoEntregaId,
+                Itens = CartService.Items.Select(item => new CarrinhoItemDto
+                {
+                    ProdutoId = item.Product.Id,
+                    Quantidade = item.Quantity
+                }).ToList()
+            };
+
+            var result = await ApiService.CreateOrderAsync(orderDto);
+
+            if (result.Success)
+            {
+                successMessage = result.Message;
+                orderCompleted = true;
+                
+                // Limpar o carrinho
+                CartService.ClearCart();
+                
+                await OnOrderComplete.InvokeAsync();
+            }
+            else
+            {
+                errorMessage = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao processar encomenda: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task CloseAndReset()
+    {
+        orderCompleted = false;
+        successMessage = "";
+        errorMessage = "";
+        checkoutModel = new CheckoutFormModel();
+        selectedDeliveryCost = 0;
+        await OnClose.InvokeAsync();
+    }
+
+    private void CloseIfClickedOutside()
+    {
+        // Não fechar se estiver processando
+        if (!isProcessing && !orderCompleted)
+        {
+            _ = Close();
+        }
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text ?? string.Empty;
+        return text[..(maxLength - 3)] + "...";
+    }
+
+    // Modelo do formulário de checkout
+    public class CheckoutFormModel
+    {
+        public string MoradaEnvio { get; set; } = string.Empty;
+        public int ModoEntregaId { get; set; }
+        
+        // Campos de pagamento
+        public string NomeCartao { get; set; } = string.Empty;
+        public string NumeroCartao { get; set; } = string.Empty;
+        public string ValidadeCartao { get; set; } = string.Empty;
+        public string CVV { get; set; } = string.Empty;
+    }
+}

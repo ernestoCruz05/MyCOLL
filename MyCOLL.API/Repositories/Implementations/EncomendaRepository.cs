@@ -105,5 +105,14 @@ namespace MyCOLL.API.Repositories.Implementations
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<int> GetUnidadesVendidasPorProdutoAsync(int produtoId)
+        {
+            // Soma as quantidades de todas as encomendas que não foram canceladas
+            return await _context.Set<DetalheEncomenda>()
+                .Include(d => d.Encomenda)
+                .Where(d => d.ProdutoId == produtoId && d.Encomenda.Estado != EstadoEncomenda.Cancelada)
+                .SumAsync(d => d.Quantidade);
+        }
     }
 }

@@ -12,10 +12,12 @@ namespace MyCOLL.API.Controllers
     public class ProdutosController : ControllerBase
     {
         private readonly IProdutoRepository _repository;
+        private readonly IEncomendaRepository _encomendaRepository;
 
-        public ProdutosController(IProdutoRepository repository)
+        public ProdutosController(IProdutoRepository repository, IEncomendaRepository encomendaRepository)
         {
             _repository = repository;
+            _encomendaRepository = encomendaRepository;
         }
 
         /// <summary>
@@ -76,18 +78,46 @@ namespace MyCOLL.API.Controllers
         }
 
         /// <summary>
-        /// Lista produtos do fornecedor autenticado
+        /// Lista produtos do fornecedor autenticado (com estatísticas de vendas)
         /// </summary>
         [HttpGet("meus")]
         [Authorize(Roles = "Fornecedor")]
-        public async Task<ActionResult<IEnumerable<Produto>>> GetMeusProdutos()
+        public async Task<ActionResult<IEnumerable<object>>> GetMeusProdutos()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "Utilizador não autenticado" });
 
             var produtos = await _repository.GetByFornecedorIdAsync(userId);
-            return Ok(produtos);
+            
+            // Calcular unidades vendidas para cada produto
+            var produtosComVendas = new List<object>();
+            foreach (var produto in produtos)
+            {
+                var unidadesVendidas = await _encomendaRepository.GetUnidadesVendidasPorProdutoAsync(produto.Id);
+                produtosComVendas.Add(new
+                {
+                    produto.Id,
+                    produto.Nome,
+                    produto.Descricao,
+                    produto.PrecoBase,
+                    produto.MargemLucro,
+                    produto.Preco,
+                    produto.Stock,
+                    produto.CategoriaId,
+                    produto.Categoria,
+                    produto.ModoEntregaId,
+                    produto.ModoEntrega,
+                    produto.FornecedorId,
+                    produto.ImagemUrl,
+                    produto.Ativo,
+                    produto.DataCriacao,
+                    produto.DataAtualizacao,
+                    UnidadesVendidas = unidadesVendidas
+                });
+            }
+
+            return Ok(produtosComVendas);
         }
 
         /// <summary>
