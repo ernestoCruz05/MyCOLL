@@ -7,7 +7,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace MyCOLL.API.Controllers
 {
@@ -24,9 +23,6 @@ namespace MyCOLL.API.Controllers
             _configuration = configuration;
         }
 
-        /// <summary>
-        /// Autentica utilizador e retorna token JWT
-        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
@@ -83,9 +79,6 @@ namespace MyCOLL.API.Controllers
             });
         }
 
-        /// <summary>
-        /// Regista novo utilizador (Cliente ou Fornecedor)
-        /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
         {
@@ -141,9 +134,6 @@ namespace MyCOLL.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Obtém os dados do perfil do utilizador logado
-        /// </summary>
         [HttpGet("me")]
         [Authorize] 
         public async Task<IActionResult> GetMyProfile()
@@ -165,9 +155,6 @@ namespace MyCOLL.API.Controllers
             });
         }
 
-        /// <summary>
-        /// Atualiza os dados (exceto email e password)
-        /// </summary>
         [HttpPut("profile")]
         [Authorize]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileDto dto)
@@ -195,9 +182,6 @@ namespace MyCOLL.API.Controllers
             return BadRequest(result.Errors);
         }
 
-        /// <summary>
-        /// Altera a password verificando a antiga
-        /// </summary>
         [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)

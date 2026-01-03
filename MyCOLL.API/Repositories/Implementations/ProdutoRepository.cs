@@ -24,6 +24,17 @@ namespace MyCOLL.API.Repositories.Implementations
                 .ToListAsync();
         }
 
+        // Novo método: retorna todos os produtos incluindo inativos (para a loja)
+        public async Task<IEnumerable<Produto>> GetAllIncludingInactiveAsync()
+        {
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .OrderByDescending(p => p.Ativo) // Ativos primeiro
+                .ThenByDescending(p => p.DataCriacao)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Produto>> GetByCategoriaAsync(int categoriaId)
         {
             return await _context.Produtos
@@ -36,12 +47,33 @@ namespace MyCOLL.API.Repositories.Implementations
                 .ToListAsync();
         }
 
+        // Novo método: retorna produtos por categoria incluindo inativos
+        public async Task<IEnumerable<Produto>> GetByCategoriaIncludingInactiveAsync(int categoriaId)
+        {
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .Where(p => p.CategoriaId == categoriaId || p.Categoria.CategoriaPaiId == categoriaId)
+                .OrderByDescending(p => p.Ativo)
+                .ThenByDescending(p => p.DataCriacao)
+                .ToListAsync();
+        }
+
         public async Task<Produto?> GetByIdAsync(int id)
         {
             return await _context.Produtos
                 .Include(p => p.Categoria)
                 .Include(p => p.ModoEntrega)
                 .FirstOrDefaultAsync(p => p.Id == id && p.Ativo);
+        }
+
+        // Novo método: obter produto por ID incluindo inativos (para ver detalhes)
+        public async Task<Produto?> GetByIdIncludingInactiveAsync(int id)
+        {
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<IEnumerable<Produto>> SearchAsync(string searchTerm)
@@ -55,6 +87,21 @@ namespace MyCOLL.API.Repositories.Implementations
                      (p.Descricao != null && p.Descricao.ToLower().Contains(term)) ||
                      (p.Categoria != null && p.Categoria.Nome.ToLower().Contains(term))))
                 .OrderByDescending(p => p.DataCriacao)
+                .ToListAsync();
+        }
+
+        // Novo método: pesquisa incluindo produtos inativos
+        public async Task<IEnumerable<Produto>> SearchIncludingInactiveAsync(string searchTerm)
+        {
+            var term = searchTerm.ToLower();
+            return await _context.Produtos
+                .Include(p => p.Categoria)
+                .Include(p => p.ModoEntrega)
+                .Where(p => p.Nome.ToLower().Contains(term) ||
+                     (p.Descricao != null && p.Descricao.ToLower().Contains(term)) ||
+                     (p.Categoria != null && p.Categoria.Nome.ToLower().Contains(term)))
+                .OrderByDescending(p => p.Ativo)
+                .ThenByDescending(p => p.DataCriacao)
                 .ToListAsync();
         }
 

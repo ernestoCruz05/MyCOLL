@@ -20,7 +20,6 @@ namespace MyCOLL.Frontend
                 });
 
             string baseUrl = GetApiBaseUrl();
-            Console.WriteLine($"🔗 API Base URL: {baseUrl}");
 
             builder.Services.AddScoped(sp =>
             {
@@ -41,7 +40,6 @@ namespace MyCOLL.Frontend
 
             builder.Services.AddScoped<CollectionApiService>();
             builder.Services.AddSingleton<CartService>();
-
             builder.Services.AddScoped<UserService>();
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<CustomAuthStateProvider>();
@@ -76,12 +74,9 @@ namespace MyCOLL.Frontend
         private static string GetApiBaseUrl()
         {
             if (UseDevTunnel)
-            {
-                Console.WriteLine("🌐 Using Dev Tunnel configuration");
                 return DevTunnelUrl;
-            }
 
-            var baseUrl = DeviceInfo.Platform switch
+            return DeviceInfo.Platform switch
             {
                 var p when p == DevicePlatform.Android => "http://10.0.2.2:5225/",
                 var p when p == DevicePlatform.iOS => "http://localhost:5225/",
@@ -89,9 +84,6 @@ namespace MyCOLL.Frontend
                 var p when p == DevicePlatform.WinUI => "http://localhost:5225/",
                 _ => "http://localhost:5225/"
             };
-
-            Console.WriteLine($"📱 Local Platform URL: {baseUrl}");
-            return baseUrl;
         }
     }
 }

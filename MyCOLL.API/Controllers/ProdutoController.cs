@@ -20,53 +20,56 @@ namespace MyCOLL.API.Controllers
             _encomendaRepository = encomendaRepository;
         }
 
-        /// <summary>
-        /// Lista produtos ativos (público)
-        /// </summary>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<Produto>>> GetAll([FromQuery] int? categoriaId)
+        public async Task<ActionResult<IEnumerable<Produto>>> GetAll([FromQuery] int? categoriaId, [FromQuery] bool includeInactive = true)
         {
             IEnumerable<Produto> produtos;
 
             if (categoriaId.HasValue && categoriaId.Value > 0)
-                produtos = await _repository.GetByCategoriaAsync(categoriaId.Value);
+            {
+                produtos = includeInactive 
+                    ? await _repository.GetByCategoriaIncludingInactiveAsync(categoriaId.Value)
+                    : await _repository.GetByCategoriaAsync(categoriaId.Value);
+            }
             else
-                produtos = await _repository.GetAllAsync();
+            {
+                produtos = includeInactive 
+                    ? await _repository.GetAllIncludingInactiveAsync()
+                    : await _repository.GetAllAsync();
+            }
 
             return Ok(produtos);
         }
 
-        /// <summary>
-        /// Obtém produto por ID (público)
-        /// </summary>
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<Produto>> GetById(int id)
+        public async Task<ActionResult<Produto>> GetById(int id, [FromQuery] bool includeInactive = true)
         {
-            var produto = await _repository.GetByIdAsync(id);
+            var produto = includeInactive 
+                ? await _repository.GetByIdIncludingInactiveAsync(id)
+                : await _repository.GetByIdAsync(id);
+                
             if (produto == null)
                 return NotFound(new { message = "Produto não encontrado" });
             return Ok(produto);
         }
 
-        /// <summary>
-        /// Pesquisa produtos por nome/descrição (público)
-        /// </summary>
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<Produto>>> Search([FromQuery] string q)
+        public async Task<ActionResult<IEnumerable<Produto>>> Search([FromQuery] string q, [FromQuery] bool includeInactive = true)
         {
             if (string.IsNullOrWhiteSpace(q))
-                return Ok(await _repository.GetAllAsync());
+                return Ok(includeInactive 
+                    ? await _repository.GetAllIncludingInactiveAsync()
+                    : await _repository.GetAllAsync());
 
-            var produtos = await _repository.SearchAsync(q);
+            var produtos = includeInactive 
+                ? await _repository.SearchIncludingInactiveAsync(q)
+                : await _repository.SearchAsync(q);
             return Ok(produtos);
         }
 
-        /// <summary>
-        /// Produto em destaque aleatório (público)
-        /// </summary>
         [HttpGet("destaque")]
         [AllowAnonymous]
         public async Task<ActionResult<Produto>> GetDestaque()
@@ -77,9 +80,6 @@ namespace MyCOLL.API.Controllers
             return Ok(produto);
         }
 
-        /// <summary>
-        /// Lista produtos do fornecedor autenticado (com estatísticas de vendas)
-        /// </summary>
         [HttpGet("meus")]
         [Authorize(Roles = "Fornecedor")]
         public async Task<ActionResult<IEnumerable<object>>> GetMeusProdutos()
@@ -89,8 +89,7 @@ namespace MyCOLL.API.Controllers
                 return Unauthorized(new { message = "Utilizador não autenticado" });
 
             var produtos = await _repository.GetByFornecedorIdAsync(userId);
-            
-            // Calcular unidades vendidas para cada produto
+
             var produtosComVendas = new List<object>();
             foreach (var produto in produtos)
             {
@@ -120,9 +119,6 @@ namespace MyCOLL.API.Controllers
             return Ok(produtosComVendas);
         }
 
-        /// <summary>
-        /// Cria novo produto (Fornecedor/Admin/Gestor)
-        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Fornecedor,Admin,Gestor")]
         public async Task<ActionResult<Produto>> Create([FromBody] ProdutoCreateDto dto)
@@ -133,7 +129,6 @@ namespace MyCOLL.API.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isFornecedor = User.IsInRole("Fornecedor");
 
-            // Lógica RN: Se for fornecedor, a margem inicial é 0.
             decimal margem = isFornecedor ? 0 : dto.MargemLucro;
 
             var produto = new Produto
@@ -142,14 +137,12 @@ namespace MyCOLL.API.Controllers
                 Descricao = dto.Descricao,
                 PrecoBase = dto.PrecoBase,
                 MargemLucro = margem,
-                // Calcula o preço final com base na margem definida
                 Preco = dto.PrecoBase + (dto.PrecoBase * (margem / 100)),
                 Stock = dto.Stock,
                 CategoriaId = dto.CategoriaId,
                 ModoEntregaId = dto.ModoEntregaId,
                 ImagemUrl = dto.ImagemUrl,
                 FornecedorId = isFornecedor ? userId : null,
-                // RN01: Se for fornecedor, o produto entra como Inativo (Pendente)
                 Ativo = !isFornecedor,
                 DataCriacao = DateTime.Now
             };
@@ -165,9 +158,6 @@ namespace MyCOLL.API.Controllers
             });
         }
 
-        /// <summary>
-        /// Atualiza produto (dono, Admin ou Gestor)
-        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Fornecedor,Admin,Gestor")]
         public async Task<IActionResult> Update(int id, [FromBody] ProdutoUpdateDto dto)
@@ -183,11 +173,9 @@ namespace MyCOLL.API.Controllers
             var isAdmin = User.IsInRole("Admin") || User.IsInRole("Gestor");
             var isFornecedor = User.IsInRole("Fornecedor");
 
-            // Segurança: Apenas dono ou admin podem editar
             if (!isAdmin && produtoExistente.FornecedorId != userId)
                 return Forbid();
 
-            // Atualização dos campos comuns
             produtoExistente.Nome = dto.Nome;
             produtoExistente.Descricao = dto.Descricao;
             produtoExistente.PrecoBase = dto.PrecoBase;
@@ -197,26 +185,15 @@ namespace MyCOLL.API.Controllers
             produtoExistente.ImagemUrl = dto.ImagemUrl;
             produtoExistente.DataAtualizacao = DateTime.Now;
 
-            // Lógica RN: Diferença entre Fornecedor e Admin na atualização
             if (isFornecedor)
             {
-                // RN: Se o fornecedor edita, o produto volta a ficar Pendente (Inativo) para re-validação
                 produtoExistente.Ativo = false;
-
-                // O fornecedor NÃO altera a Margem de Lucro diretamente.
-                // Mantém a margem que o Admin já tinha definido (ou 0 se ainda não definido)
-                // Recalcula o Preço Final com o novo Preço Base + Margem existente
                 produtoExistente.Preco = produtoExistente.PrecoBase + (produtoExistente.PrecoBase * (produtoExistente.MargemLucro / 100));
             }
             else
             {
-                // Se for Admin/Gestor, pode alterar a Margem de Lucro
                 produtoExistente.MargemLucro = dto.MargemLucro;
-
-                // Recalcula o Preço Final com a nova Margem
                 produtoExistente.Preco = produtoExistente.PrecoBase + (produtoExistente.PrecoBase * (dto.MargemLucro / 100));
-
-                // Nota: O Admin gere o estado Ativo/Inativo através do endpoint ToggleAtivo ou pode manter o estado atual aqui.
             }
 
             await _repository.UpdateAsync(produtoExistente);
@@ -229,9 +206,6 @@ namespace MyCOLL.API.Controllers
             });
         }
 
-        /// <summary>
-        /// Elimina produto (dono, Admin ou Gestor)
-        /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Fornecedor,Admin,Gestor")]
         public async Task<IActionResult> Delete(int id)
@@ -251,9 +225,6 @@ namespace MyCOLL.API.Controllers
             return Ok(new { message = "Produto eliminado com sucesso!" });
         }
 
-        /// <summary>
-        /// Ativa/desativa produto (Admin/Gestor apenas)
-        /// </summary>
         [HttpPatch("{id}/toggle-ativo")]
         [Authorize(Roles = "Admin,Gestor")]
         public async Task<IActionResult> ToggleAtivo(int id)

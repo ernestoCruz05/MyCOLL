@@ -1,9 +1,7 @@
 ﻿@using MyCOLL.UIComponents.Models
 @using MyCOLL.UIComponents.Services
-@inject CollectionApiService ApiService
 
-<div class="product-card @(IsInCart ? "in-cart" : "")">
-    <!-- Product Image Area -->
+<div class="product-card @(IsInCart ? "in-cart" : "") @(!Product.Ativo ? "unavailable" : "")">
     <div class="product-image">
         @if (!string.IsNullOrEmpty(Product.ImagemUrl))
         {
@@ -21,8 +19,13 @@
             </div>
         }
 
-        <!-- Stock Badge -->
-        @if (Product.Stock <= 0)
+        @if (!Product.Ativo)
+        {
+            <div class="stock-badge unavailable">
+                <i class="fas fa-ban"></i> Não Disponível
+            </div>
+        }
+        else if (Product.Stock <= 0)
         {
             <div class="stock-badge out-of-stock">
                 <i class="fas fa-times-circle"></i> Sold Out
@@ -35,18 +38,17 @@
             </div>
         }
 
-        <!-- Quick Actions Overlay -->
         <div class="product-overlay">
             <button class="overlay-btn" @onclick="OnInspectClick" title="View Details">
                 <i class="fas fa-eye"></i>
             </button>
-            @if (CanAddToCart)
+            @if (Product.Ativo && CanAddToCart)
             {
                 <button class="overlay-btn add-cart-btn" @onclick="AddToCartClick" title="Add to Cart">
                     <i class="fas fa-cart-plus"></i>
                 </button>
             }
-            else if (Product.Stock > 0 && !CanAddToCart)
+            else if (Product.Ativo && Product.Stock > 0 && !CanAddToCart)
             {
                 <button class="overlay-btn" disabled title="Máximo no carrinho">
                     <i class="fas fa-check"></i>
@@ -55,7 +57,6 @@
         </div>
     </div>
 
-    <!-- Product Info -->
     <div class="product-info">
         <h5 class="product-title" title="@Product.Nome">@TruncateText(Product.Nome, 28)</h5>
 
@@ -65,20 +66,29 @@
         }
 
         <div class="product-footer">
-            <div class="product-price">
-                <span class="price-currency">€</span>
-                <span class="price-value">@Product.Preco.ToString("N2")</span>
-            </div>
+            @if (Product.Ativo)
+            {
+                <div class="product-price">
+                    <span class="price-currency">€</span>
+                    <span class="price-value">@Product.Preco.ToString("N2")</span>
+                </div>
+            }
+            else
+            {
+                <div class="product-unavailable-text">
+                    <i class="fas fa-ban"></i>
+                    <span>Não Disponível</span>
+                </div>
+            }
 
-            <button class="btn-inspect" @onclick="OnInspectClick" disabled="@(!Product.Ativo)">
+            <button class="btn-inspect" @onclick="OnInspectClick">
                 <i class="fas fa-search"></i>
                 <span>Inspect</span>
             </button>
         </div>
     </div>
 
-    <!-- Cart Indicator -->
-    @if (IsInCart)
+    @if (Product.Ativo && IsInCart)
     {
         <div class="cart-indicator">
             <i class="fas fa-check-circle"></i> In Cart (@CartQuantity/@Product.Stock)
@@ -95,7 +105,7 @@
 
     private bool IsInCart => CartService.ContainsProduct(Product.Id);
     private int CartQuantity => CartService.GetQuantity(Product.Id);
-    private bool CanAddToCart => Product.Stock > 0 && CartService.CanAddMore(Product.Id, Product.Stock);
+    private bool CanAddToCart => Product.Ativo && Product.Stock > 0 && CartService.CanAddMore(Product.Id, Product.Stock);
 
     protected override void OnInitialized()
     {
@@ -114,18 +124,6 @@
             CartService.AddItem(Product);
             await OnAddToCart.InvokeAsync(Product);
         }
-    }
-
-    private string GetFullImageUrl(string? imageUrl)
-    {
-        if (string.IsNullOrEmpty(imageUrl))
-            return string.Empty;
-
-        if (imageUrl.StartsWith("http://") || imageUrl.StartsWith("https://"))
-            return imageUrl;
-
-        var baseUrl = ApiService.GetBaseUrl();
-        return $"{baseUrl.TrimEnd('/')}{imageUrl}";
     }
 
     private string GetInitials(string name)

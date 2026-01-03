@@ -21,7 +21,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    // Mudar isto mais tarde, tou farto de Teste123!
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
@@ -52,7 +51,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add CORS policy for MAUI app and Dev Tunnels
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowMauiApp", policy =>
@@ -132,9 +130,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-
-// Servir ficheiros estáticos (imagens)
 app.UseStaticFiles();
 
 var storeUploadsPath = Path.Combine(builder.Environment.ContentRootPath, "..", "MyCOLL", "wwwroot", "uploads");
@@ -151,18 +146,10 @@ if (Directory.Exists(storeUploadsPath))
             ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         }
     });
-    Console.WriteLine($"Shared Image Folder Linked: {storeUploadsPath}");
-}
-else
-{
-    Console.WriteLine($"Shared Image Folder NOT Found at: {storeUploadsPath}");
 }
 
 app.UseCors("AllowMauiApp");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

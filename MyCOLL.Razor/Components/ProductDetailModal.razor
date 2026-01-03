@@ -5,8 +5,7 @@
 @if (IsVisible && Product != null)
 {
     <div class="modal-backdrop" @onclick="Close">
-        <div class="product-modal" @onclick:stopPropagation="true">
-            <!-- Modal Header -->
+        <div class="product-modal @(!Product.Ativo ? "unavailable-modal" : "")" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h4 class="modal-title">
                     <i class="fas fa-scroll"></i> Artifact Details
@@ -16,14 +15,12 @@
                 </button>
             </div>
             
-            <!-- Modal Body -->
             <div class="modal-body">
                 <div class="modal-content-grid">
-                    <!-- Product Image -->
                     <div class="modal-image-section">
                         @if (!string.IsNullOrEmpty(Product.ImagemUrl))
                         {
-                            <img src="@GetFullImageUrl(Product.ImagemUrl)" alt="@Product.Nome" class="modal-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <img src="@GetFullImageUrl(Product.ImagemUrl)" alt="@Product.Nome" class="modal-image @(!Product.Ativo ? "grayscale" : "")" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                             <div class="modal-image-placeholder" style="display: none;">
                                 <i class="fas fa-archive"></i>
                                 <span>@Product.Nome[0]</span>
@@ -37,34 +34,52 @@
                             </div>
                         }
                         
-                        <!-- Stock Status -->
-                        <div class="stock-info @GetStockClass()">
-                            @if (Product.Stock <= 0)
-                            {
-                                <i class="fas fa-times-circle"></i>
-                                <span>Out of Stock</span>
-                            }
-                            else if (Product.Stock <= 3)
-                            {
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <span>Only @Product.Stock remaining</span>
-                            }
-                            else
-                            {
-                                <i class="fas fa-check-circle"></i>
-                                <span>In Stock (@Product.Stock available)</span>
-                            }
-                        </div>
+                        @if (!Product.Ativo)
+                        {
+                            <div class="stock-info unavailable">
+                                <i class="fas fa-ban"></i>
+                                <span>Artigo Não Disponível</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="stock-info @GetStockClass()">
+                                @if (Product.Stock <= 0)
+                                {
+                                    <i class="fas fa-times-circle"></i>
+                                    <span>Out of Stock</span>
+                                }
+                                else if (Product.Stock <= 3)
+                                {
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Only @Product.Stock remaining</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>In Stock (@Product.Stock available)</span>
+                                }
+                            </div>
+                        }
                     </div>
                     
-                    <!-- Product Details -->
                     <div class="modal-details-section">
                         <h2 class="product-name">@Product.Nome</h2>
                         
-                        <div class="product-price-large">
-                            <span class="currency">€</span>
-                            <span class="amount">@Product.Preco.ToString("N2")</span>
-                        </div>
+                        @if (Product.Ativo)
+                        {
+                            <div class="product-price-large">
+                                <span class="currency">€</span>
+                                <span class="amount">@Product.Preco.ToString("N2")</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="product-unavailable-notice">
+                                <i class="fas fa-ban"></i>
+                                <span>Este artigo não está disponível de momento</span>
+                            </div>
+                        }
                         
                         @if (!string.IsNullOrEmpty(Product.Descricao))
                         {
@@ -85,8 +100,7 @@
                             </div>
                         </div>
                         
-                        <!-- Quantity Selector -->
-                        @if (Product.Stock > 0)
+                        @if (Product.Ativo && Product.Stock > 0)
                         {
                             <div class="quantity-section">
                                 <label>Quantity:</label>
@@ -102,19 +116,31 @@
                                 <span class="qty-total">Total: €@((Product.Preco * quantity).ToString("N2"))</span>
                             </div>
                         }
+                        else if (!Product.Ativo)
+                        {
+                            <div class="unavailable-info-box">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Este artigo não se encontra disponível para compra. Poderá voltar a estar disponível em breve.</p>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
             
-            <!-- Modal Footer -->
             <div class="modal-footer">
                 <button class="btn-secondary" @onclick="Close">
                     <i class="fas fa-arrow-left"></i> Continue Browsing
                 </button>
-                @if (Product.Stock > 0)
+                @if (Product.Ativo && Product.Stock > 0)
                 {
                     <button class="btn-primary" @onclick="AddToCart">
                         <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                }
+                else if (!Product.Ativo)
+                {
+                    <button class="btn-unavailable" disabled>
+                        <i class="fas fa-ban"></i> Não Disponível
                     </button>
                 }
                 else
@@ -173,7 +199,7 @@
 
     private async Task AddToCart()
     {
-        if (Product != null && Product.Stock > 0)
+        if (Product != null && Product.Ativo && Product.Stock > 0)
         {
             CartService.AddItem(Product, quantity);
             await OnAddToCart.InvokeAsync((Product, quantity));
@@ -189,6 +215,7 @@
     private string GetStockClass()
     {
         if (Product == null) return "";
+        if (!Product.Ativo) return "unavailable";
         return Product.Stock switch
         {
             <= 0 => "out-of-stock",

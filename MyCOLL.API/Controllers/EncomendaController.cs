@@ -25,9 +25,6 @@ namespace MyCOLL.API.Controllers
             _modoEntregaRepo = modoEntregaRepo;
         }
 
-        /// <summary>
-        /// Lista todas as encomendas (Admin/Gestor)
-        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin,Gestor")]
         public async Task<ActionResult<IEnumerable<Encomenda>>> GetAll()
@@ -36,9 +33,6 @@ namespace MyCOLL.API.Controllers
             return Ok(encomendas);
         }
 
-        /// <summary>
-        /// Lista encomendas do utilizador autenticado (Cliente ou Fornecedor)
-        /// </summary>
         [HttpGet("minhas")]
         [Authorize(Roles = "Cliente,Fornecedor")]
         public async Task<ActionResult<IEnumerable<Encomenda>>> GetMinhasEncomendas()
@@ -51,9 +45,6 @@ namespace MyCOLL.API.Controllers
             return Ok(encomendas);
         }
 
-        /// <summary>
-        /// Obtém encomenda por ID
-        /// </summary>
         [HttpGet("{id}")]
         [Authorize]
         public async Task<ActionResult<Encomenda>> GetById(int id)
@@ -71,9 +62,6 @@ namespace MyCOLL.API.Controllers
             return Ok(encomenda);
         }
 
-        /// <summary>
-        /// Cria nova encomenda (Cliente ou Fornecedor autenticado)
-        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Cliente,Fornecedor")]
         public async Task<ActionResult<Encomenda>> Create([FromBody] EncomendaCreateDto dto)
@@ -145,9 +133,6 @@ namespace MyCOLL.API.Controllers
             });
         }
 
-        /// <summary>
-        /// Atualiza estado da encomenda (Admin/Gestor)
-        /// </summary>
         [HttpPatch("{id}/estado")]
         [Authorize(Roles = "Admin,Gestor")]
         public async Task<IActionResult> UpdateEstado(int id, [FromBody] UpdateEstadoDto dto)

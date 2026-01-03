@@ -9,18 +9,14 @@ namespace MyCOLL.UIComponents.Services
     public class CollectionApiService
     {
         private readonly HttpClient _httpClient;
-        private readonly UserService _userService; // <--- 1. Referência ao UserService
+        private readonly UserService _userService;
 
-        // 2. Injeção do UserService no construtor
         public CollectionApiService(HttpClient httpClient, UserService userService)
         {
             _httpClient = httpClient;
             _userService = userService;
         }
 
-        /// <summary>
-        /// Método auxiliar para anexar o Token JWT aos pedidos
-        /// </summary>
         private void SetAuthorizationHeader()
         {
             if (_userService.IsLoggedIn && _userService.CurrentUser != null && !string.IsNullOrEmpty(_userService.CurrentUser.Token))
@@ -34,9 +30,6 @@ namespace MyCOLL.UIComponents.Services
             }
         }
 
-        /// <summary>
-        /// Retorna o URL base da API
-        /// </summary>
         public string GetBaseUrl()
         {
             return _httpClient.BaseAddress?.ToString() ?? string.Empty;
@@ -50,9 +43,8 @@ namespace MyCOLL.UIComponents.Services
             {
                 return await _httpClient.GetFromJsonAsync<List<Categoria>>("api/Categorias") ?? new();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error fetching categories: {ex.Message}");
                 return new List<Categoria>();
             }
         }
@@ -94,9 +86,8 @@ namespace MyCOLL.UIComponents.Services
 
                 return products;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 return new List<Produto>();
             }
         }
@@ -105,13 +96,12 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                SetAuthorizationHeader(); // <--- Requer autenticação
+                SetAuthorizationHeader();
                 var response = await _httpClient.DeleteAsync($"api/Produtos/{id}");
                 return response.IsSuccessStatusCode;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error deleting product: {ex.Message}");
                 return false;
             }
         }
@@ -124,9 +114,8 @@ namespace MyCOLL.UIComponents.Services
                 if (product != null) FixImageUrl(product);
                 return product;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 return null;
             }
         }
@@ -145,9 +134,8 @@ namespace MyCOLL.UIComponents.Services
                                 (p.Descricao?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
                     .ToList();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error searching products: {ex.Message}");
                 return new List<Produto>();
             }
         }
@@ -156,14 +144,13 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                SetAuthorizationHeader(); // <--- Requer autenticação
+                SetAuthorizationHeader();
                 var products = await _httpClient.GetFromJsonAsync<List<Produto>>("api/Produtos/meus") ?? new();
                 foreach (var p in products) FixImageUrl(p);
                 return products;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error fetching my products: {ex.Message}");
                 return new List<Produto>();
             }
         }
@@ -172,7 +159,7 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                SetAuthorizationHeader(); // <--- Requer autenticação (Corrige o 401 Unauthorized)
+                SetAuthorizationHeader();
 
                 var response = await _httpClient.PostAsJsonAsync("api/Produtos", produto);
                 if (response.IsSuccessStatusCode)
@@ -181,12 +168,10 @@ namespace MyCOLL.UIComponents.Services
                 }
 
                 var errorDetail = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"API Error: {errorDetail}");
                 return $"Erro na API: {response.StatusCode} - {errorDetail}";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating product: {ex.Message}");
                 return $"Erro de conexão: {ex.Message}";
             }
         }
@@ -195,7 +180,7 @@ namespace MyCOLL.UIComponents.Services
         {
             try
             {
-                SetAuthorizationHeader(); // <--- Requer autenticação (Corrige o upload falhado)
+                SetAuthorizationHeader();
 
                 long maxFileSize = 1024 * 1024 * 5;
 
@@ -211,19 +196,16 @@ namespace MyCOLL.UIComponents.Services
                 {
                     var result = await response.Content.ReadFromJsonAsync<UploadResult>();
 
-                    // Constrói o URL completo para exibir na app imediatamente
                     string? partialUrl = result?.ImageUrl ?? result?.Url;
                     if (!string.IsNullOrEmpty(partialUrl))
                     {
-                        // Garante que devolve o URL absoluto para o frontend conseguir mostrar a pré-visualização
                         return $"{GetBaseUrl().TrimEnd('/')}{partialUrl}";
                     }
                 }
                 return null;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Upload error: {ex.Message}");
                 return null;
             }
         }
@@ -244,9 +226,8 @@ namespace MyCOLL.UIComponents.Services
                 }
                 return new AuthResult { Success = false, Message = "Credenciais inválidas" };
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Login error: {ex.Message}");
                 return new AuthResult { Success = false, Message = "Erro de conexão" };
             }
         }
@@ -259,18 +240,16 @@ namespace MyCOLL.UIComponents.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<JsonElement>(); 
+                    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
                     string msg = result.TryGetProperty("message", out var m) ? m.ToString() : "Registo efetuado com sucesso";
-
                     return new AuthResult { Success = true, Message = msg };
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
                 return new AuthResult { Success = false, Message = $"Erro: {error}" };
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Registration error: {ex.Message}");
                 return new AuthResult { Success = false, Message = "Erro de conexão com o servidor" };
             }
         }
@@ -335,9 +314,7 @@ namespace MyCOLL.UIComponents.Services
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Order API Error: {errorContent}");
-                
-                // Tentar extrair mensagem de erro do JSON
+
                 try
                 {
                     var errorJson = JsonSerializer.Deserialize<JsonElement>(errorContent);
@@ -347,12 +324,11 @@ namespace MyCOLL.UIComponents.Services
                     }
                 }
                 catch { }
-                
+
                 return new OrderResult { Success = false, Message = "Erro ao criar encomenda" };
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Order creation error: {ex.Message}");
                 return new OrderResult { Success = false, Message = "Erro de conexão" };
             }
         }
@@ -364,9 +340,8 @@ namespace MyCOLL.UIComponents.Services
                 SetAuthorizationHeader();
                 return await _httpClient.GetFromJsonAsync<List<Encomenda>>("api/Encomendas/minhas") ?? new();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error fetching orders: {ex.Message}");
                 return new List<Encomenda>();
             }
         }
@@ -378,9 +353,8 @@ namespace MyCOLL.UIComponents.Services
                 SetAuthorizationHeader();
                 return await _httpClient.GetFromJsonAsync<Encomenda>($"api/Encomendas/{id}");
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error fetching order: {ex.Message}");
                 return null;
             }
         }
@@ -391,9 +365,8 @@ namespace MyCOLL.UIComponents.Services
             {
                 return await _httpClient.GetFromJsonAsync<List<ModoEntrega>>("api/ModosEntrega") ?? new();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error fetching delivery modes: {ex.Message}");
                 return new List<ModoEntrega>();
             }
         }
@@ -427,7 +400,6 @@ namespace MyCOLL.UIComponents.Services
         public string Message { get; set; } = string.Empty;
     }
 
-    // DTO para criar encomenda (corresponde ao backend EncomendaCreateDto)
     public class EncomendaCreateDto
     {
         public string MoradaEnvio { get; set; } = string.Empty;
@@ -446,7 +418,6 @@ namespace MyCOLL.UIComponents.Services
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string ConfirmPassword { get; set; } = string.Empty;
-
         public bool Fornecedor { get; set; } = false;
         public string? NomeEmpresa { get; set; }
         public string? NIF { get; set; }
@@ -456,7 +427,7 @@ namespace MyCOLL.UIComponents.Services
 
     public class UserProfileModel
     {
-        public string Email { get; set; } = string.Empty; 
+        public string Email { get; set; } = string.Empty;
         public string NomeCompleto { get; set; } = string.Empty;
         public bool IsFornecedor { get; set; }
         public string? NomeEmpresa { get; set; }

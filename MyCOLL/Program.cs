@@ -9,7 +9,6 @@ using MyCOLL.UIComponents.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -17,7 +16,6 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
-
 
 builder.Services.AddScoped<CategoriaService>();
 builder.Services.AddScoped<ProdutoService>();
@@ -35,7 +33,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -43,7 +40,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders()
 .AddSignInManager();
-
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -58,7 +54,6 @@ builder.Services.AddHttpClient<CollectionApiService>(client =>
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -79,7 +74,6 @@ app.MapPost("/logout", async (SignInManager<ApplicationUser> signInManager, Http
     await signInManager.SignOutAsync();
     context.Response.Redirect("/Account/Login");
 });
-
 
 app.Use(async (context, next) =>
 {
@@ -110,7 +104,6 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
     }
 
-    // Admin
     string adminEmail = "admin@mycoll.com";
     string adminPass = "Admin123!";
     var admin = await userManager.FindByEmailAsync(adminEmail);
@@ -121,7 +114,6 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(admin, "Admin");
     }
 
-    // Gestor
     string staffEmail = "gestor@mycoll.com";
     string staffPass = "Gestor123!";
     var staff = await userManager.FindByEmailAsync(staffEmail);
@@ -131,14 +123,9 @@ using (var scope = app.Services.CreateScope())
         await userManager.CreateAsync(staff, staffPass);
         await userManager.AddToRoleAsync(staff, "Gestor");
     }
-
-    await SeedEncomendas.SeedAsync(db, userManager);
-
 }
-
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
 
 app.Run();

@@ -65,18 +65,12 @@
 
                         <div class="order-body">
                             <div class="order-items">
-                                @foreach (var item in encomenda.Itens.Take(3))
+                                @foreach (var item in encomenda.Itens)
                                 {
                                     <div class="order-item-preview">
                                         <span class="item-qty">@item.Quantidade×</span>
                                         <span class="item-name">@(item.Produto?.Nome ?? "Produto")</span>
                                         <span class="item-price">€@((item.Quantidade * item.PrecoUnitario).ToString("N2"))</span>
-                                    </div>
-                                }
-                                @if (encomenda.Itens.Count > 3)
-                                {
-                                    <div class="more-items">
-                                        <i class="fas fa-ellipsis-h"></i> +@(encomenda.Itens.Count - 3) mais itens
                                     </div>
                                 }
                             </div>
@@ -108,12 +102,8 @@
                                     <span>€@encomenda.Total.ToString("N2")</span>
                                 </div>
                             </div>
-                            <button class="btn-view-details" @onclick="() => ViewOrderDetails(encomenda.Id)">
-                                <i class="fas fa-eye"></i> Ver Detalhes
-                            </button>
                         </div>
 
-                        <!-- Status Progress -->
                         <div class="order-progress">
                             <div class="progress-step @(IsStepCompleted(encomenda.Estado, "Pendente") ? "completed" : "") @(IsStepActive(encomenda.Estado, "Pendente") ? "active" : "")">
                                 <div class="step-icon"><i class="fas fa-clock"></i></div>
@@ -164,7 +154,6 @@
         {
             isLoading = true;
             Encomendas = await ApiService.GetMyOrdersAsync();
-            // Ordenar por data (mais recentes primeiro)
             Encomendas = Encomendas.OrderByDescending(e => e.DataEncomenda).ToList();
         }
         catch (Exception ex)
@@ -175,12 +164,6 @@
         {
             isLoading = false;
         }
-    }
-
-    private void ViewOrderDetails(int orderId)
-    {
-        // Por agora, pode-se implementar um modal ou navegar para uma página de detalhes
-        // Navigation.NavigateTo($"/my-orders/{orderId}");
     }
 
     private string GetStatusClass(string estado) => estado switch

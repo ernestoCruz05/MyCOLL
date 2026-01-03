@@ -150,7 +150,6 @@
 <ProductDetailModal Product="selectedProduct" CategoryName="@GetCategoryName(selectedProduct?.CategoriaId)"
                     IsVisible="isModalOpen" OnClose="CloseModal" OnAddToCart="HandleModalAddToCart" />
 
-<!-- Checkout Modal -->
 <CheckoutModal IsVisible="isCheckoutOpen" 
                OnClose="CloseCheckout" 
                OnOrderComplete="HandleOrderComplete" />
@@ -202,11 +201,17 @@
             categories = await categoriesTask;
             products = await productsTask;
 
-            if (products != null && products.Count > 0)
+            var activeProducts = products?.Where(p => p.Ativo).ToList();
+            if (activeProducts != null && activeProducts.Count > 0)
             {
                 var rnd = new Random();
-                randomProduct = products[rnd.Next(products.Count)];
+                randomProduct = activeProducts[rnd.Next(activeProducts.Count)];
                 showRecommendation = true;
+            }
+            else
+            {
+                randomProduct = null;
+                showRecommendation = false;
             }
         }
         catch (Exception ex)
@@ -256,24 +261,20 @@
     private async Task ResetView() => await LoadInitialData();
 
     private string GetFullImageUrl(string? imageUrl)
-{
-    if (string.IsNullOrEmpty(imageUrl)) return "";
-
-    // 1. Obter BaseUrl através do serviço injetado
-    var baseUrl = ApiService.GetBaseUrl().TrimEnd('/');
-
-    // 2. Correção para Android se o URL for absoluto e tiver localhost
-    if (imageUrl.Contains("localhost") && baseUrl.Contains("10.0.2.2"))
     {
-        return imageUrl.Replace("localhost", "10.0.2.2");
+        if (string.IsNullOrEmpty(imageUrl)) return "";
+
+        var baseUrl = ApiService.GetBaseUrl().TrimEnd('/');
+
+        if (imageUrl.Contains("localhost") && baseUrl.Contains("10.0.2.2"))
+        {
+            return imageUrl.Replace("localhost", "10.0.2.2");
+        }
+
+        if (imageUrl.StartsWith("http")) return imageUrl;
+
+        return $"{baseUrl}/{imageUrl.TrimStart('/')}";
     }
-
-    // 3. Se já for http válido (e não precisou de troca), devolve igual
-    if (imageUrl.StartsWith("http")) return imageUrl;
-
-    // 4. Se for relativo, junta com o BaseUrl correto
-    return $"{baseUrl}/{imageUrl.TrimStart('/')}";
-}
 
     private string GetSelectedCategoryName()
     {
@@ -295,6 +296,7 @@
     private void HandleModalAddToCart((Produto product, int quantity) args) { ShowToast($"Added {args.quantity}x '{args.product.Nome}' to cart"); }
     private void ToggleCart() => isCartOpen = !isCartOpen;
     private void CloseCart() => isCartOpen = false;
+    
     private void HandleCheckout() 
     { 
         if (!UserService.IsLoggedIn)
@@ -310,7 +312,6 @@
             return;
         }
         
-        // Fechar o cart drawer e abrir o checkout modal
         CloseCart();
         isCheckoutOpen = true;
         StateHasChanged();
